@@ -1,0 +1,148 @@
+/* --- CẤU HÌNH CHUNG --- */
+body {
+    font-family: 'Noto Serif', 'Times New Roman', serif;
+    background-color: #FDFCF8;
+    margin: 0;
+    padding: 10px;
+    color: #4A3B32;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #E6D5B8;
+}
+
+/* --- HEADER --- */
+.main-header {
+    background-color: #FFFBBE;
+    padding: 12px 12px;
+    border-bottom: 3px solid #D9A404;
+    display: flex; align-items: center; gap: 10px;
+}
+.logo { width: 45px; height: auto; flex-shrink: 0; filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.1)); }
+.header-content { flex-grow: 1; min-width: 0; }
+.header-content h1 {
+    margin: 0; color: #8B4513; font-weight: 700; line-height: 1.2;
+    font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.header-content p {
+    margin: 2px 0 0 0; color: #795548; font-size: 12px; font-style: italic;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* --- RESPONSIVE PC --- */
+@media (min-width: 768px) {
+    body { padding: 20px; }
+    .main-header { padding: 25px 30px; gap: 25px; }
+    .logo { width: 90px; }
+    .header-content h1 { font-size: 28px; white-space: normal; }
+    .header-content p { font-size: 15px; }
+}
+
+/* --- TIN TỨC --- */
+.news-list { padding: 20px; }
+.news-item { border-bottom: 1px solid #F0EAD6; padding: 25px 0; }
+.news-item:last-child { border-bottom: none; }
+.news-item .title { margin: 8px 0 15px 0; font-size: 18px; color: #5D4037; font-weight: bold; line-height: 1.4; }
+.news-item .date { font-size: 12px; background: #FFF8E1; color: #A67B5B; padding: 3px 8px; border-radius: 4px; display: inline-block; }
+
+/* --- XỬ LÝ NỘI DUNG & VIDEO --- */
+.content-wrapper {
+    margin-top: 10px;
+    font-size: 16px;
+    line-height: 1.6;
+    color: #3E2723;
+    text-align: justify;
+    word-wrap: break-word;
+    position: relative;
+    transition: max-height 0.5s ease;
+    overflow: hidden;
+}
+
+/* Class này dùng để thu gọn nội dung */
+.content-collapsed {
+    max-height: 280px;
+}
+.content-collapsed::after {
+    content: "";
+    position: absolute;
+    bottom: 0; left: 0; width: 100%; height: 80px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
+    pointer-events: none;
+}
+
+/* Nút Xem Thêm */
+.btn-readmore {
+    display: block; margin: 15px auto 0;
+    background-color: transparent; color: #8B4513; border: 1px solid #8B4513;
+    padding: 8px 25px; border-radius: 20px; cursor: pointer;
+    font-family: inherit; font-size: 14px; font-weight: bold; transition: 0.3s;
+}
+.btn-readmore:hover { background-color: #8B4513; color: #fff; }
+.hidden { display: none; }
+
+/* Video Embed & Image CSS */
+.video-responsive {
+    position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
+    max-width: 100%; margin: 15px 0; border-radius: 8px; background: #000;
+}
+.video-responsive iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+
+/* 1. Dành cho HÌNH ẢNH: Cần height: auto để giữ tỷ lệ */
+.content-wrapper img {
+    max-width: 100% !important;
+    height: auto !important;
+    box-sizing: border-box;
+    margin: 10px auto !important;
+    display: block;
+}
+
+/* 2. Dành cho VIDEO (TikTok, Youtube Embed): KHÔNG ĐƯỢC để height: auto */
+.content-wrapper iframe, 
+.content-wrapper blockquote, 
+.content-wrapper div {
+    max-width: 100% !important;
+    /* height: auto; <--- Đã xóa dòng này */
+    box-sizing: border-box;
+    margin: 10px auto !important;
+    display: block;
+}
+.tiktok-embed { margin: 0 auto !important; width: 100% !important; min-width: auto !important; }
+
+/* CSS CHO LINK TRONG BÀI VIẾT */
+.content-wrapper a {
+    color: #b35400; text-decoration: none; border-bottom: 1px dotted #b35400;
+    font-weight: bold; word-break: break-all;
+}
+.content-wrapper a:hover { color: #d35400; border-bottom: 1px solid #d35400; }
+
+/* --- FOOTER & ADMIN --- */
+footer { text-align: center; padding: 15px; background-color: #FFFBBE; border-top: 1px solid #E6D5B8; }
+footer a { color: #8B4513; text-decoration: none; font-size: 13px; }
+
+.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+.admin-header h2 { margin: 0; color: #8B4513; }
+.btn-secondary { font-size: 13px; color: #555; text-decoration: none; margin-right: 10px; }
+.btn-logout { font-size: 13px; color: red; text-decoration: none; }
+
+.form-group { margin-bottom: 15px; }
+label { display: block; margin-bottom: 5px; font-weight: bold; }
+input, textarea { width: 100%; padding: 10px; border: 1px solid #D7CCC8; box-sizing: border-box; border-radius: 4px; background: #FFFCF2; font-family: inherit;}
+button { background: #8B4513; color: #fff; padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.3s; }
+
+.action-btn { font-size: 12px; padding: 4px 8px; border-radius: 3px; text-decoration: none; margin-left: 5px; display: inline-block; }
+.edit-btn { background: #FFF8E1; color: #8B4513; border: 1px solid #E6D5B8; }
+.del-btn { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+
+/* [MỚI] STYLE CHO BẢNG DANH SÁCH BÀI VIẾT (ADMIN) */
+.admin-list table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.admin-list th { background-color: #FFF8E1; color: #5D4037; padding: 10px; text-align: left; border-bottom: 2px solid #E6D5B8; }
+.admin-list td { padding: 10px; border-bottom: 1px solid #eee; color: #3E2723; }
+.admin-list tr:hover { background-color: #fafafa; }
+
