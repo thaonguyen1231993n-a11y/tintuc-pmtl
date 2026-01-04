@@ -84,17 +84,38 @@ body {
 .news-item .title { margin: 8px 0 15px 0; font-size: 22px; color: #5D4037; font-weight: bold; line-height: 1.4; }
 .news-item .date { font-size: 12px; background: #FFF8E1; color: #A67B5B; padding: 3px 8px; border-radius: 4px; display: inline-block; }
 
-/* --- [MỚI] STYLE CHO ẢNH ĐẠI DIỆN BÀI VIẾT --- */
-/* Ảnh này nằm ngoài phần thu gọn nên luôn hiển thị to rõ */
-.post-feature-image {
-    width: 100%;
-    display: block;
-    margin: 15px 0 20px 0;
+/* --- [MỚI] KHUNG HIỂN THỊ ẢNH/VIDEO (MEDIA BOX) --- */
+.media-box {
+    background-color: #FFF8E1; /* Nền vàng kem đồng bộ */
+    border: 1px solid #E6D5B8;
     border-radius: 8px;
-    background-color: #FFF8E1; /* Đổi từ #000 sang màu vàng kem nhạt */
-    max-height: 600px;
-    object-fit: contain; 
-    border: 1px solid #E6D5B8; /* Đổi viền sang màu nâu nhạt cho hợp nền vàng */
+    padding: 15px; /* Tạo khoảng hở để nhìn thấy nền vàng */
+    margin: 15px 0 20px 0;
+    text-align: center; /* Căn giữa ảnh/video */
+    
+    /* Flexbox để căn giữa nội dung hoàn hảo */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px; /* Chiều cao tối thiểu cho đẹp */
+}
+
+/* Định dạng cho Ảnh hoặc Video bên trong hộp vàng */
+.media-box img, 
+.media-box .video-responsive {
+    max-width: 100%;
+    max-height: 600px; /* Giới hạn chiều cao để video 9:16 không bị quá dài */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Đổ bóng nhẹ cho nổi bật */
+    border-radius: 4px;
+    margin: 0 !important; /* Reset margin để khung vàng căn chỉnh */
+}
+
+/* Tinh chỉnh lại class video-responsive khi nằm trong hộp vàng */
+.media-box .video-responsive {
+    width: 100%; /* Chiếm chiều rộng cho phép */
+    /* Nếu là video Youtube (16:9), giới hạn chiều rộng để không quá to trên PC */
+    max-width: 800px; 
+    background: #000;
 }
 
 /* --- XỬ LÝ NỘI DUNG VĂN BẢN (TEXT) --- */
@@ -211,4 +232,5 @@ button { background: #8B4513; color: #fff; padding: 10px 20px; border: none; cur
 .admin-list th { background-color: #FFF8E1; color: #5D4037; padding: 10px; text-align: left; border-bottom: 2px solid #E6D5B8; }
 .admin-list td { padding: 10px; border-bottom: 1px solid #eee; color: #3E2723; }
 .admin-list tr:hover { background-color: #fafafa; }
+
 
