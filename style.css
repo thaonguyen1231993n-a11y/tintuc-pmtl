@@ -36,7 +36,7 @@ body {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* --- RESPONSIVE PC --- */
+/* --- RESPONSIVE PC HEADER --- */
 @media (min-width: 768px) {
     body { padding: 20px; }
     .main-header { padding: 25px 30px; gap: 25px; }
@@ -85,7 +85,7 @@ body {
 .news-item .date { font-size: 12px; background: #FFF8E1; color: #A67B5B; padding: 3px 8px; border-radius: 4px; display: inline-block; }
 
 /* =========================================
-   MEDIA BOX (XỬ LÝ ẢNH & VIDEO ĐA NĂNG)
+   MEDIA BOX (XỬ LÝ ẢNH & VIDEO) - QUAN TRỌNG
    ========================================= */
 
 /* --- 1. GIAO DIỆN MOBILE (Mặc định) --- */
@@ -93,6 +93,7 @@ body {
     margin: 15px 0 20px 0;
     text-align: center;
     width: 100%;
+    /* Mobile: Không nền, full chiều rộng */
     background: transparent;
     border: none;
     padding: 0;
@@ -107,25 +108,20 @@ body {
     box-shadow: none;
 }
 
-/* SỬA LỖI MOBILE: Dùng aspect-ratio để video luôn chuẩn tỷ lệ, không bị hụt */
 .media-box .video-responsive {
     width: 100%;
-    aspect-ratio: 16 / 9; /* Tự động tính chiều cao theo tỷ lệ 16:9 */
+    /* Mobile: Tỷ lệ 16:9 để video không bị bẹp */
+    aspect-ratio: 16 / 9;
     height: auto;
     border-radius: 8px;
     overflow: hidden;
     background: #000;
-    
-    /* Reset các thuộc tính thừa */
-    padding-bottom: 0;
-    position: static;
-    min-height: auto; /* Bỏ min-height cứng để tránh méo */
 }
 
 .media-box .video-responsive iframe {
     width: 100%;
     height: 100%;
-    position: static;
+    border: 0;
 }
 
 /* --- 2. GIAO DIỆN PC / TABLET (Màn hình > 768px) --- */
@@ -136,7 +132,7 @@ body {
         border-radius: 8px;
         padding: 15px;
         
-        /* CỐ ĐỊNH CHIỀU CAO KHUNG VÀNG (Bằng chiều cao 1 video dọc chuẩn) */
+        /* CỐ ĐỊNH CHIỀU CAO KHUNG VÀNG: 560px */
         height: 560px; 
         
         /* Căn giữa nội dung tuyệt đối */
@@ -145,25 +141,24 @@ body {
         align-items: center;
     }
 
-    /* 1. ẢNH: Hiển thị trọn vẹn */
+    /* ẢNH: Hiển thị trọn vẹn trong khung */
     .media-box img {
         width: auto;
-        height: 100%; /* Cao bằng khung vàng */
+        height: 100%;
         max-width: 100%;
         object-fit: contain;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
-    /* 2. VIDEO: SỬA LỖI ZOOM/CẮT HÌNH */
+    /* VIDEO: Hiển thị dạng "Màn hình TV" nằm giữa khung vàng */
     .media-box .video-responsive {
-        /* BỎ ép tỷ lệ 16:9 (aspect-ratio) gây lỗi cắt hình */
-        aspect-ratio: auto !important; 
+        /* Chìa khóa: Ép khung đen về tỷ lệ 16:9 */
+        aspect-ratio: 16 / 9;
         
-        /* Thiết lập kích thước cố định theo khung vàng */
-        height: 100%;       /* Cao 560px */
-        width: 100%;        /* Rộng tối đa */
+        /* Chiều cao ăn theo khung vàng */
+        height: 100%;
+        width: auto; /* Chiều rộng tự tính theo tỷ lệ */
         
-        /* Để video tự căn chỉnh bên trong, không bị méo */
         background: #000;
         border-radius: 4px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
@@ -171,13 +166,6 @@ body {
         align-items: center;
         justify-content: center;
         overflow: hidden; 
-    }
-
-    /* Iframe bên trong sẽ tự co giãn (letterbox/pillarbox) bởi Facebook/Youtube */
-    .media-box .video-responsive iframe {
-        width: 100%;
-        height: 100%;
-        border: 0;
     }
 }
 
@@ -212,7 +200,6 @@ body {
     font-family: inherit; font-size: 14px; font-weight: bold; transition: 0.3s;
 }
 .btn-readmore:hover { background-color: #8B4513; color: #fff; }
-.hidden { display: none; }
 
 /* --- PHÂN TRANG --- */
 .pagination {
@@ -240,33 +227,32 @@ body {
     border-color: #8B4513;
 }
 
-/* --- VIDEO THỨ 2 TRONG BÀI (DỰ PHÒNG) --- */
-.video-responsive {
+/* --- VIDEO DỰ PHÒNG TRONG BÀI VIẾT --- */
+/* Class này cho các video thứ 2, thứ 3 nằm xen kẽ trong text */
+.content-wrapper .video-responsive {
     position: relative; 
     margin: 15px 0; 
     border-radius: 8px; 
     background: #000;
     width: 100%;
+    aspect-ratio: 16 / 9;
 }
 
-/* Các thành phần khác trong bài viết */
+/* Các thành phần khác */
 .content-wrapper img {
     max-width: 100% !important;
     height: auto !important;
     margin: 10px auto !important;
     display: block;
 }
-
 .content-wrapper iframe, 
-.content-wrapper blockquote, 
-.content-wrapper div {
+.content-wrapper blockquote {
     max-width: 100% !important;
     box-sizing: border-box;
     margin: 10px auto !important;
     display: block;
 }
 .tiktok-embed { margin: 0 auto !important; width: 100% !important; min-width: auto !important; }
-
 .content-wrapper a {
     color: #b35400; text-decoration: none; border-bottom: 1px dotted #b35400;
     font-weight: bold; word-break: break-all;
@@ -295,4 +281,3 @@ button { background: #8B4513; color: #fff; padding: 10px 20px; border: none; cur
 .admin-list th { background-color: #FFF8E1; color: #5D4037; padding: 10px; text-align: left; border-bottom: 2px solid #E6D5B8; }
 .admin-list td { padding: 10px; border-bottom: 1px solid #eee; color: #3E2723; }
 .admin-list tr:hover { background-color: #fafafa; }
-
