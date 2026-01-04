@@ -109,7 +109,7 @@
                 $content
             );
 
-            // 3. TIKTOK / KHÁC (Xử lý xuống dòng)
+            // 3. TIKTOK / KHÁC
             $content = preg_replace_callback('/<(blockquote|iframe|script|div)([^>]*)>/s', function ($matches) {
                 return '<' . $matches[1] . str_replace(["\n", "\r"], " ", $matches[2]) . '>';
             }, $content);
