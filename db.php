@@ -7,15 +7,17 @@ function getDB() {
     $pass = getenv('DB_PASS');
     $port = getenv('DB_PORT'); 
 
-    // Kết nối Direct (5432) vẫn cần sslmode=require
+    // Bắt buộc có sslmode=require
     $dsn = "pgsql:host=$host;port=$port;dbname=$db;sslmode=require";
     
     try {
         $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_TIMEOUT => 15, // Tăng thời gian chờ lên 15s
-            PDO::ATTR_EMULATE_PREPARES => false, // [QUAN TRỌNG] Tắt giả lập để tương thích tốt hơn với Postgres
-            PDO::ATTR_PERSISTENT => true // [QUAN TRỌNG] Giữ kết nối bền vững vì web chạy trên Docker
+            PDO::ATTR_TIMEOUT => 15,
+            // Tắt giả lập Prepare (Code chạy "thật" hơn, tránh lỗi timeout ảo)
+            PDO::ATTR_EMULATE_PREPARES => false, 
+            // Không dùng Persistent Connection ở chế độ này để tránh giữ slot quá lâu
+            PDO::ATTR_PERSISTENT => false 
         ];
 
         $pdo = new PDO($dsn, $user, $pass, $options);
