@@ -8,7 +8,7 @@ function getDB() {
     $pass = getenv('DB_PASS');
     $port = getenv('DB_PORT'); // Thường là 5432 hoặc 6543
 
-    $dsn = "pgsql:host=$host;port=$port;dbname=$db;";
+    $dsn = "pgsql:host=$host;port=$port;dbname=$db;sslmode=require";
     
     try {
         $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
@@ -17,4 +17,5 @@ function getDB() {
         die("Lỗi kết nối Database: " . $e->getMessage());
     }
 }
+
 ?>
