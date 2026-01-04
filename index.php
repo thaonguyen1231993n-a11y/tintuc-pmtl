@@ -89,7 +89,6 @@
             if (empty($content)) return "";
 
             // 1. Xử lý Link YOUTUBE
-            // Thêm style width:100%; height:100%
             $content = preg_replace(
                 '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})([^\s<]*)/', 
                 '<div class="video-responsive"><iframe src="https://www.youtube.com/embed/$1" style="width:100%; height:100%; border:0;" allowfullscreen></iframe></div>', 
@@ -101,7 +100,7 @@
                 '/(https?:\/\/(?:www\.|web\.|m\.)?facebook\.com\/(?:watch\/\?v=\d+|[a-zA-Z0-9.]+\/videos\/\d+|reel\/|share\/v\/)[^\s<]*)/',
                 function($matches) {
                     $videoUrl = urlencode($matches[1]);
-                    // Set width=100%, height=100% để CSS bên ngoài điều khiển
+                    // BỎ HẾT các tham số width/height cố định, để CSS lo
                     return '<div class="video-responsive">
                                 <iframe src="https://www.facebook.com/plugins/video.php?href=' . $videoUrl . '&show_text=false&t=0" 
                                         style="width:100%; height:100%; border:none; overflow:hidden;" 
@@ -263,6 +262,7 @@
 
 </body>
 </html>
+
 
 
 
