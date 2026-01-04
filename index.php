@@ -95,14 +95,16 @@
                 $content
             );
 
-            // 2. Xử lý Link FACEBOOK (Tự động tạo iframe plugins)
-            // Logic: Tìm link facebook -> UrlEncode link đó -> Nhét vào plugin video của FB
+            // 2. Xử lý Link FACEBOOK
+            // Logic: Bỏ width cố định, thêm height=100% để nó bung lụa trong khung
             $content = preg_replace_callback(
                 '/(https?:\/\/(?:www\.|web\.|m\.)?facebook\.com\/(?:watch\/\?v=\d+|[a-zA-Z0-9.]+\/videos\/\d+|reel\/|share\/v\/)[^\s<]*)/',
                 function($matches) {
-                    $videoUrl = urlencode($matches[1]); // Mã hóa link FB
-                    return '<div class="video-responsive" style="background:#fff;">
-                                <iframe src="https://www.facebook.com/plugins/video.php?href=' . $videoUrl . '&show_text=false&width=560" 
+                    $videoUrl = urlencode($matches[1]);
+                    // Lưu ý: Mình bỏ 'width=560' và thay bằng style width:100%; height:100%
+                    return '<div class="video-responsive">
+                                <iframe src="https://www.facebook.com/plugins/video.php?href=' . $videoUrl . '&show_text=false&t=0" 
+                                        style="width:100%; height:100%; border:none; overflow:hidden;" 
                                         scrolling="no" frameborder="0" allowfullscreen="true" 
                                         allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
                                 </iframe>
@@ -261,5 +263,6 @@
 
 </body>
 </html>
+
 
 
