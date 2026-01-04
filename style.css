@@ -9,7 +9,7 @@ body {
 }
 
 .container {
-    max-width: 1100px; /* CẬP NHẬT: Mở rộng khung để xem ảnh đẹp hơn */
+    max-width: 1100px; 
     margin: 0 auto;
     background: #fff;
     box-shadow: 0 4px 15px rgba(139, 69, 19, 0.1);
@@ -45,7 +45,7 @@ body {
     .header-content p { font-size: 15px; }
 }
 
-/* --- [MỚI] THANH LỌC NGÀY THÁNG --- */
+/* --- THANH LỌC NGÀY THÁNG --- */
 .filter-bar {
     background: #FFF8E1;
     padding: 15px 20px;
@@ -79,7 +79,7 @@ body {
 
 /* --- TIN TỨC --- */
 .news-list { padding: 20px; }
-.news-item { border-bottom: 1px solid #F0EAD6; padding: 30px 0; } /* Tăng padding */
+.news-item { border-bottom: 1px solid #F0EAD6; padding: 30px 0; }
 .news-item:last-child { border-bottom: none; }
 .news-item .title { margin: 8px 0 15px 0; font-size: 22px; color: #5D4037; font-weight: bold; line-height: 1.4; }
 .news-item .date { font-size: 12px; background: #FFF8E1; color: #A67B5B; padding: 3px 8px; border-radius: 4px; display: inline-block; }
@@ -88,19 +88,17 @@ body {
    MEDIA BOX (XỬ LÝ ẢNH & VIDEO ĐA NĂNG)
    ========================================= */
 
-/* --- 1. GIAO DIỆN MOBILE (Mặc định - Ưu tiên hiển thị to rõ) --- */
+/* --- 1. GIAO DIỆN MOBILE (Mặc định) --- */
 .media-box {
     margin: 15px 0 20px 0;
     text-align: center;
     width: 100%;
-    /* Mobile: KHÔNG có nền vàng, KHÔNG viền để tiết kiệm diện tích */
     background: transparent;
     border: none;
     padding: 0;
-    display: block; /* Để nội dung tự chảy từ trên xuống dưới */
+    display: block;
 }
 
-/* Ảnh trên mobile: Chiều rộng 100%, chiều cao tự động theo tỷ lệ ảnh */
 .media-box img {
     width: 100%;
     height: auto; 
@@ -109,60 +107,52 @@ body {
     box-shadow: none;
 }
 
-/* Video trên mobile: Chiều rộng 100%, chiều cao tự điều chỉnh */
 .media-box .video-responsive {
     width: 100%;
-    /* Mẹo: Đặt chiều cao tối thiểu để video không bị bẹp */
-    min-height: 300px; 
+    min-height: 300px; /* Đảm bảo video không bị thấp quá */
     height: auto;
     border-radius: 8px;
     overflow: hidden;
     background: #000;
+    
+    /* RESET các thuộc tính cũ để tránh lỗi */
+    padding-bottom: 0;
+    position: static;
 }
 .media-box .video-responsive iframe {
     width: 100%;
-    /* Facebook/Youtube plugin sẽ tự lo phần tỷ lệ nội dung */
-    height: 100%; 
+    height: 100%;
     min-height: 300px;
+    position: static;
 }
 
-
-/* --- 2. GIAO DIỆN PC / TABLET (Màn hình > 768px) --- */
+/* --- 2. GIAO DIỆN PC / TABLET --- */
 @media (min-width: 768px) {
     .media-box {
-        /* PC: Có nền vàng, có viền, kích thước cố định */
         background-color: #FFF8E1;
         border: 1px solid #E6D5B8;
         border-radius: 8px;
-        padding: 15px; /* Khoảng hở để thấy nền vàng */
-        
-        /* Cố định chiều cao khung vàng để Đồng bộ */
-        height: 550px; 
-        
-        /* Flexbox căn giữa nội dung hoàn hảo */
+        padding: 15px;
+        height: 550px; /* Chiều cao cố định */
         display: flex;
         justify-content: center;
         align-items: center;
     }
 
-    /* Ảnh trên PC: Giới hạn chiều cao để nằm gọn trong khung vàng */
     .media-box img {
-        width: auto;       /* Chiều rộng tự do */
-        height: 100%;      /* Chiều cao ăn theo khung vàng (550px) */
-        max-width: 100%;   /* Không tràn ngang */
-        object-fit: contain; /* Giữ nguyên tỷ lệ ảnh, không bị méo */
+        width: auto;
+        height: 100%;
+        max-width: 100%;
+        object-fit: contain;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
-    /* Video trên PC: Nằm gọn trong khung vàng */
     .media-box .video-responsive {
         width: 100%;
-        height: 100%; /* Chiếm full chiều cao khung vàng */
+        height: 100%;
         background: #000;
         border-radius: 4px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        
-        /* Căn giữa video trong nền đen */
         display: flex;
         align-items: center;
         justify-content: center;
@@ -187,7 +177,6 @@ body {
     overflow: hidden;
 }
 
-/* Class này dùng để thu gọn nội dung văn bản */
 .content-collapsed {
     max-height: 280px;
 }
@@ -199,7 +188,6 @@ body {
     pointer-events: none;
 }
 
-/* Nút Xem Thêm */
 .btn-readmore {
     display: block; margin: 15px auto 0;
     background-color: transparent; color: #8B4513; border: 1px solid #8B4513;
@@ -209,7 +197,7 @@ body {
 .btn-readmore:hover { background-color: #8B4513; color: #fff; }
 .hidden { display: none; }
 
-/* --- [MỚI] PHÂN TRANG (PAGINATION) --- */
+/* --- PHÂN TRANG --- */
 .pagination {
     display: flex;
     justify-content: center;
@@ -235,13 +223,18 @@ body {
     border-color: #8B4513;
 }
 
-/* --- VIDEO & EMBED TRONG BÀI VIẾT --- */
+/* --- [ĐÃ SỬA] VIDEO & EMBED NẰM TRONG BÀI VIẾT (Video thứ 2 trở đi) --- */
+/* Class này dùng dự phòng nếu có video nằm trong text mà không được đưa lên media-box */
 .video-responsive {
-    position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;
-    max-width: 100%; margin: 15px 0; border-radius: 8px; background: #000;
+    position: relative; 
+    margin: 15px 0; 
+    border-radius: 8px; 
+    background: #000;
+    width: 100%;
+    /* Bỏ padding-bottom: 56.25% cũ đi để không ép tỷ lệ 16:9 */
 }
-.video-responsive iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
 
+/* Các thành phần khác trong bài viết */
 .content-wrapper img {
     max-width: 100% !important;
     height: auto !important;
@@ -259,7 +252,6 @@ body {
 }
 .tiktok-embed { margin: 0 auto !important; width: 100% !important; min-width: auto !important; }
 
-/* CSS CHO LINK TRONG BÀI VIẾT */
 .content-wrapper a {
     color: #b35400; text-decoration: none; border-bottom: 1px dotted #b35400;
     font-weight: bold; word-break: break-all;
@@ -288,7 +280,3 @@ button { background: #8B4513; color: #fff; padding: 10px 20px; border: none; cur
 .admin-list th { background-color: #FFF8E1; color: #5D4037; padding: 10px; text-align: left; border-bottom: 2px solid #E6D5B8; }
 .admin-list td { padding: 10px; border-bottom: 1px solid #eee; color: #3E2723; }
 .admin-list tr:hover { background-color: #fafafa; }
-
-
-
-
