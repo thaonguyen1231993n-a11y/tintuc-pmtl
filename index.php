@@ -84,19 +84,50 @@
 
     <div class="news-list">
         <?php
-        // Hàm xử lý hiển thị nội dung text
+        // Hàm xử lý hiển thị nội dung (ĐÃ NÂNG CẤP VIDEO ĐA NĂNG)
         function displayContent($content) {
             if (empty($content)) return "";
-            // Sửa lỗi embed
+
+            // 1. Xử lý Link YOUTUBE (Dạng: youtube.com hoặc youtu.be)
+            $content = preg_replace(
+                '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})([^\s<]*)/', 
+                '<div class="video-responsive"><iframe src="https://www.youtube.com/embed/$1" allowfullscreen></iframe></div>', 
+                $content
+            );
+
+            // 2. Xử lý Link FACEBOOK (Tự động tạo iframe plugins)
+            // Logic: Tìm link facebook -> UrlEncode link đó -> Nhét vào plugin video của FB
+            $content = preg_replace_callback(
+                '/(https?:\/\/(?:www\.|web\.|m\.)?facebook\.com\/(?:watch\/\?v=\d+|[a-zA-Z0-9.]+\/videos\/\d+|reel\/|share\/v\/)[^\s<]*)/',
+                function($matches) {
+                    $videoUrl = urlencode($matches[1]); // Mã hóa link FB
+                    return '<div class="video-responsive" style="background:#fff;">
+                                <iframe src="https://www.facebook.com/plugins/video.php?href=' . $videoUrl . '&show_text=false&width=560" 
+                                        scrolling="no" frameborder="0" allowfullscreen="true" 
+                                        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
+                                </iframe>
+                            </div>';
+                },
+                $content
+            );
+
+            // 3. Xử lý Link TIKTOK (Dạng link đơn giản, dùng embed mặc định của Tiktok nếu có)
+            // TikTok khó hơn vì họ chặn iframe trực tiếp, nhưng ta có thể dùng thẻ blockquote mặc định nếu bạn dán mã nhúng.
+            // Hoặc dùng Regex để bắt link và hiển thị thông báo click để xem.
+            
+            // 4. Sửa lỗi xuống dòng và link text thông thường
             $content = preg_replace_callback('/<(blockquote|iframe|script|div)([^>]*)>/s', function ($matches) {
                 return '<' . $matches[1] . str_replace(["\n", "\r"], " ", $matches[2]) . '>';
             }, $content);
-            // Youtube embed
-            $content = preg_replace('/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/', 
-                '<div class="video-responsive"><iframe src="https://www.youtube.com/embed/$1" allowfullscreen></iframe></div>', $content);
-            // Link text
-            $content = preg_replace('/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', 
-                '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', $content);
+            
+            // Link text thường thành thẻ a (Tránh những link đã biến thành video ở trên)
+            // Đoạn này cần chạy CUỐI CÙNG để không làm hỏng iframe video
+            $content = preg_replace(
+                '/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', 
+                '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', 
+                $content
+            );
+
             return nl2br($content);
         }
 
@@ -217,3 +248,4 @@
 
 </body>
 </html>
+
