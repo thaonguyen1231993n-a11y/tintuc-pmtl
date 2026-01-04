@@ -187,7 +187,14 @@ if (isset($_SESSION['loggedin'])) {
             
             <div class="form-group">
                 <label>Nội dung:</label>
-                <textarea name="content" rows="10" required><?php echo $edit_mode ? htmlspecialchars($editing_post['content']) : ''; ?></textarea>
+                
+                <div style="margin-bottom: 10px;">
+                    <button type="button" onclick="insertVideoLink()" style="background: #cc0000; color: white; padding: 5px 15px; border-radius: 4px; border:none; font-size: 13px;">
+                        ▶ Chèn Video (Youtube/FB)
+                    </button>
+                    <span style="font-size: 12px; color: #666; margin-left: 10px;">(Chỉ cần dán link, web tự hiện video)</span>
+                </div>
+                <textarea id="postContent" name="content" rows="10" required><?php echo $edit_mode ? htmlspecialchars($editing_post['content']) : ''; ?></textarea>
             </div>
             
             <button type="submit" name="save_post"><?php echo $edit_mode ? "Lưu Thay Đổi" : "Đăng Bài Ngay"; ?></button>
@@ -210,5 +217,31 @@ if (isset($_SESSION['loggedin'])) {
         </div>
     <?php endif; ?>
 </div>
+<script>
+    function insertVideoLink() {
+        // 1. Hỏi người dùng link
+        let link = prompt("Dán đường link video vào đây (Youtube, Facebook, TikTok):", "");
+        
+        if (link != null && link.trim() !== "") {
+            // 2. Lấy ô nhập liệu
+            let textarea = document.getElementById("postContent");
+            
+            // 3. Tạo khoảng trắng xuống dòng để link nằm riêng biệt
+            let textToInsert = "\n" + link.trim() + "\n";
+            
+            // 4. Chèn vào vị trí con trỏ đang đứng (hoặc cuối cùng)
+            if (textarea.selectionStart || textarea.selectionStart == '0') {
+                var startPos = textarea.selectionStart;
+                var endPos = textarea.selectionEnd;
+                textarea.value = textarea.value.substring(0, startPos)
+                    + textToInsert
+                    + textarea.value.substring(endPos, textarea.value.length);
+            } else {
+                textarea.value += textToInsert;
+            }
+        }
+    }
+</script>
 </body>
 </html>
+
