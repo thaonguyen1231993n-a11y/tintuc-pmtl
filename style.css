@@ -100,24 +100,62 @@ body {
     min-height: 200px; /* Chiều cao tối thiểu cho đẹp */
 }
 
-/* Định dạng cho Ảnh hoặc Video bên trong hộp vàng */
-.media-box img, 
-.media-box .video-responsive {
+/* --- KHUNG HIỂN THỊ ẢNH/VIDEO (MEDIA BOX) --- */
+.media-box {
+    background-color: #FFF8E1; /* Nền vàng kem */
+    border: 1px solid #E6D5B8;
+    border-radius: 8px;
+    padding: 10px; 
+    margin: 15px 0 20px 0;
+    text-align: center;
+    
+    /* Flexbox căn giữa hoàn hảo */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    /* Quan trọng: Chiều cao linh hoạt nhưng không quá thấp */
+    min-height: 300px; 
+}
+
+/* 1. Định dạng cho ẢNH */
+.media-box img {
     max-width: 100%;
-    max-height: 600px; /* Giới hạn chiều cao để video 9:16 không bị quá dài */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Đổ bóng nhẹ cho nổi bật */
+    max-height: 600px; /* Giới hạn chiều cao */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     border-radius: 4px;
-    margin: 0 !important; /* Reset margin để khung vàng căn chỉnh */
+    object-fit: contain;
+    display: block;
 }
 
-/* Tinh chỉnh lại class video-responsive khi nằm trong hộp vàng */
+/* 2. Định dạng cho VIDEO (Sửa lại để không bị cắt 9:16) */
 .media-box .video-responsive {
-    width: 100%; /* Chiếm chiều rộng cho phép */
-    /* Nếu là video Youtube (16:9), giới hạn chiều rộng để không quá to trên PC */
-    max-width: 800px; 
-    background: #000;
+    /* RESET lại các thuộc tính cũ của 16:9 */
+    padding-bottom: 0 !important; 
+    position: static !important;
+    height: auto !important;
+    
+    /* Thiết lập kích thước mới */
+    width: 100%;
+    max-width: 100%; 
+    height: 560px !important; /* Chiều cao cố định đủ lớn cho video dọc */
+    
+    background: #000; /* Nền đen để làm nổi bật video */
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;       /* Dùng Flex để căn video vào giữa nền đen */
+    align-items: center; 
+    justify-content: center;
 }
 
+.media-box .video-responsive iframe {
+    /* Iframe chiếm toàn bộ khung đen 560px đó */
+    position: static !important;
+    width: 100%;
+    height: 100%; 
+    border: 0;
+}
 /* --- XỬ LÝ NỘI DUNG VĂN BẢN (TEXT) --- */
 .content-wrapper {
     margin-top: 10px;
@@ -232,5 +270,6 @@ button { background: #8B4513; color: #fff; padding: 10px 20px; border: none; cur
 .admin-list th { background-color: #FFF8E1; color: #5D4037; padding: 10px; text-align: left; border-bottom: 2px solid #E6D5B8; }
 .admin-list td { padding: 10px; border-bottom: 1px solid #eee; color: #3E2723; }
 .admin-list tr:hover { background-color: #fafafa; }
+
 
 
