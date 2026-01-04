@@ -107,24 +107,27 @@ body {
     box-shadow: none;
 }
 
+/* SỬA LỖI MOBILE: Dùng aspect-ratio để video luôn chuẩn tỷ lệ, không bị hụt */
 .media-box .video-responsive {
     width: 100%;
-    min-height: 300px; /* Đảm bảo video không bị thấp quá */
+    aspect-ratio: 16 / 9; /* Tự động tính chiều cao theo tỷ lệ 16:9 */
     height: auto;
     border-radius: 8px;
     overflow: hidden;
     background: #000;
     
-    /* RESET các thuộc tính cũ để tránh lỗi */
+    /* Reset các thuộc tính thừa */
     padding-bottom: 0;
     position: static;
+    min-height: auto; /* Bỏ min-height cứng để tránh méo */
 }
+
 .media-box .video-responsive iframe {
     width: 100%;
     height: 100%;
-    min-height: 300px;
     position: static;
 }
+
 
 /* --- 2. GIAO DIỆN PC / TABLET --- */
 @media (min-width: 768px) {
@@ -147,9 +150,18 @@ body {
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
+    /* SỬA LỖI PC: Video nằm gọn trong khung vàng, không bị zoom/cắt */
     .media-box .video-responsive {
-        width: 100%;
+        /* Chìa khóa: Khung video luôn giữ tỷ lệ TV (16:9) */
+        aspect-ratio: 16 / 9;
+        
+        /* Chiều cao ăn theo khung vàng */
         height: 100%;
+        
+        /* Chiều rộng tự tính (auto) để không bị méo */
+        width: auto;
+        max-width: 100%; /* Không tràn khung */
+
         background: #000;
         border-radius: 4px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
@@ -223,15 +235,13 @@ body {
     border-color: #8B4513;
 }
 
-/* --- [ĐÃ SỬA] VIDEO & EMBED NẰM TRONG BÀI VIẾT (Video thứ 2 trở đi) --- */
-/* Class này dùng dự phòng nếu có video nằm trong text mà không được đưa lên media-box */
+/* --- VIDEO THỨ 2 TRONG BÀI (DỰ PHÒNG) --- */
 .video-responsive {
     position: relative; 
     margin: 15px 0; 
     border-radius: 8px; 
     background: #000;
     width: 100%;
-    /* Bỏ padding-bottom: 56.25% cũ đi để không ép tỷ lệ 16:9 */
 }
 
 /* Các thành phần khác trong bài viết */
