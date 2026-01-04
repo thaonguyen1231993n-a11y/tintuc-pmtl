@@ -26,18 +26,17 @@
     require_once 'db.php';
 
     // --- CẤU HÌNH PHÂN TRANG & LỌC ---
-    $limit = 10; // Số bài mỗi trang
+    $limit = 10; 
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     if ($page < 1) $page = 1;
     $offset = ($page - 1) * $limit;
 
-    // Lấy ngày lọc (nếu có)
     $filter_date = isset($_GET['date']) ? $_GET['date'] : '';
 
     try {
         $pdo = getDB();
 
-        // 1. ĐẾM TỔNG SỐ BÀI (Để tính số trang)
+        // 1. ĐẾM TỔNG SỐ BÀI
         $sqlCount = "SELECT COUNT(*) FROM posts";
         if (!empty($filter_date)) {
             $sqlCount .= " WHERE DATE(created_at) = :fdate";
@@ -51,7 +50,7 @@
         $total_records = $stmtCount->fetchColumn();
         $total_pages = ceil($total_records / $limit);
 
-        // 2. LẤY DỮ LIỆU BÀI VIẾT (Có phân trang)
+        // 2. LẤY DỮ LIỆU
         $sql = "SELECT * FROM posts";
         if (!empty($filter_date)) {
             $sql .= " WHERE DATE(created_at) = :fdate";
@@ -65,7 +64,6 @@
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
-
     ?>
 
     <div class="filter-bar">
@@ -84,23 +82,22 @@
 
     <div class="news-list">
         <?php
-        // Hàm xử lý hiển thị nội dung (ĐÃ NÂNG CẤP VIDEO ĐA NĂNG)
+        // Hàm xử lý hiển thị nội dung
         function displayContent($content) {
             if (empty($content)) return "";
 
-            // 1. Xử lý Link YOUTUBE
+            // 1. YOUTUBE
             $content = preg_replace(
                 '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})([^\s<]*)/', 
                 '<div class="video-responsive"><iframe src="https://www.youtube.com/embed/$1" style="width:100%; height:100%; border:0;" allowfullscreen></iframe></div>', 
                 $content
             );
 
-            // 2. Xử lý Link FACEBOOK
+            // 2. FACEBOOK
             $content = preg_replace_callback(
                 '/(https?:\/\/(?:www\.|web\.|m\.)?facebook\.com\/(?:watch\/\?v=\d+|[a-zA-Z0-9.]+\/videos\/\d+|reel\/|share\/v\/)[^\s<]*)/',
                 function($matches) {
                     $videoUrl = urlencode($matches[1]);
-                    // BỎ HẾT các tham số width/height cố định, để CSS lo
                     return '<div class="video-responsive">
                                 <iframe src="https://www.facebook.com/plugins/video.php?href=' . $videoUrl . '&show_text=false&t=0" 
                                         style="width:100%; height:100%; border:none; overflow:hidden;" 
@@ -112,17 +109,12 @@
                 $content
             );
 
-            // 3. Xử lý Link TIKTOK (Dạng link đơn giản, dùng embed mặc định của Tiktok nếu có)
-            // TikTok khó hơn vì họ chặn iframe trực tiếp, nhưng ta có thể dùng thẻ blockquote mặc định nếu bạn dán mã nhúng.
-            // Hoặc dùng Regex để bắt link và hiển thị thông báo click để xem.
-            
-            // 4. Sửa lỗi xuống dòng và link text thông thường
+            // 3. TIKTOK / KHÁC (Xử lý xuống dòng)
             $content = preg_replace_callback('/<(blockquote|iframe|script|div)([^>]*)>/s', function ($matches) {
                 return '<' . $matches[1] . str_replace(["\n", "\r"], " ", $matches[2]) . '>';
             }, $content);
             
-            // Link text thường thành thẻ a (Tránh những link đã biến thành video ở trên)
-            // Đoạn này cần chạy CUỐI CÙNG để không làm hỏng iframe video
+            // Link text -> thẻ a
             $content = preg_replace(
                 '/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', 
                 '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', 
@@ -135,50 +127,38 @@
         if ($stmt->rowCount() > 0) {
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $title = $row['title'];
-                $raw_content = $row['content']; // Nội dung gốc (chưa xử lý)
+                $raw_content = $row['content'];
                 $date = date("d/m/Y H:i", strtotime($row['created_at']));
 
-                // Bước 1: Xử lý nội dung để biến Link thành Video Player
-                // Chúng ta cần kết quả đã xử lý này để tìm video iframe bên trong
                 $processed_content = displayContent($raw_content);
-
-                // --- LOGIC TÁCH MEDIA (VIDEO HOẶC ẢNH) ---
                 $featured_media = "";
                 $final_content = $processed_content;
 
-                // ƯU TIÊN 1: Tìm VIDEO (div class="video-responsive")
-                // Regex này tìm đoạn HTML video mà hàm displayContent vừa tạo ra
+                // Tách Video hoặc Ảnh
                 if (preg_match('/(<div class="video-responsive".*?<\/div>)/s', $processed_content, $matches)) {
                     $featured_media = $matches[1];
-                    // Xóa video khỏi nội dung văn bản bên dưới để tránh lặp
                     $final_content = str_replace($featured_media, "", $processed_content);
                 } 
-                // ƯU TIÊN 2: Nếu không có Video, thì tìm ẢNH (img)
                 elseif (preg_match('/(<img[^>]+>)/i', $processed_content, $matches)) {
                     $featured_media = $matches[1];
-                    // Xóa ảnh khỏi nội dung văn bản
                     $final_content = str_replace($featured_media, "", $processed_content);
                 }
-                // -----------------------------------------
 
                 echo '<div class="news-item">';
                 echo '<span class="date">' . $date . '</span>';
                 echo '<h3 class="title">' . htmlspecialchars($title) . '</h3>';
 
-                // 1. HIỂN THỊ MEDIA TRONG HỘP VÀNG (NẾU CÓ)
+                // HIỂN THỊ MEDIA BOX
                 if (!empty($featured_media)) {
                     echo '<div class="media-box">';
                     echo $featured_media;
                     echo '</div>';
                 }
 
-                // 2. HIỂN THỊ VĂN BẢN CÒN LẠI (CÓ THU GỌN)
                 echo '<div class="content-wrapper content-collapsed">';
-                // Lưu ý: in ra $final_content (đã bị cắt media đi rồi)
                 echo $final_content; 
                 echo '</div>';
                 
-                // Nút Xem Thêm
                 echo '<button class="btn-readmore" onclick="toggleContent(this)">Xem thêm ▼</button>';
                 echo '</div>';
             }
@@ -191,23 +171,16 @@
     <?php if ($total_pages > 1): ?>
     <div class="pagination">
         <?php
-            // Nút Về trang đầu
             if ($page > 1) {
                 echo '<a href="?page=1' . ($filter_date ? '&date='.$filter_date : '') . '">«</a>';
                 echo '<a href="?page=' . ($page - 1) . ($filter_date ? '&date='.$filter_date : '') . '">‹</a>';
             }
-
-            // Hiển thị các số trang
-            // Chỉ hiện tối đa 5 trang xung quanh trang hiện tại để đỡ dài
             $start = max(1, $page - 2);
             $end = min($total_pages, $page + 2);
-
             for ($i = $start; $i <= $end; $i++) {
                 $active = ($i == $page) ? 'active' : '';
                 echo '<a href="?page=' . $i . ($filter_date ? '&date='.$filter_date : '') . '" class="' . $active . '">' . $i . '</a>';
             }
-
-            // Nút Đến trang cuối
             if ($page < $total_pages) {
                 echo '<a href="?page=' . ($page + 1) . ($filter_date ? '&date='.$filter_date : '') . '">›</a>';
                 echo '<a href="?page=' . $total_pages . ($filter_date ? '&date='.$filter_date : '') . '">»</a>';
@@ -242,12 +215,10 @@
         }
     }
 
-    // Tự động ẩn nút xem thêm nếu text quá ngắn
     window.addEventListener('load', function() {
         setTimeout(function() {
             var contents = document.querySelectorAll('.content-wrapper');
             contents.forEach(function(div) {
-                // Kiểm tra chiều cao phần TEXT thôi
                 if (div.scrollHeight <= 280) {
                     div.classList.remove('content-collapsed'); 
                     var btn = div.nextElementSibling;
@@ -262,8 +233,3 @@
 
 </body>
 </html>
-
-
-
-
-
