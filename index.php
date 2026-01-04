@@ -134,18 +134,29 @@
         if ($stmt->rowCount() > 0) {
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $title = $row['title'];
-                $raw_content = $row['content'];
+                $raw_content = $row['content']; // Nội dung gốc (chưa xử lý)
                 $date = date("d/m/Y H:i", strtotime($row['created_at']));
 
-                // --- LOGIC TÁCH ẢNH RA KHỎI NỘI DUNG ---
-                // Tìm thẻ img đầu tiên trong nội dung
-                $main_image = "";
-                $text_content = $raw_content;
+                // Bước 1: Xử lý nội dung để biến Link thành Video Player
+                // Chúng ta cần kết quả đã xử lý này để tìm video iframe bên trong
+                $processed_content = displayContent($raw_content);
 
-                if (preg_match('/(<img[^>]+>)/i', $raw_content, $matches)) {
-                    $main_image = $matches[1]; // Lấy thẻ img
-                    // Xóa ảnh đó khỏi nội dung text để không bị lặp
-                    $text_content = str_replace($main_image, "", $raw_content);
+                // --- LOGIC TÁCH MEDIA (VIDEO HOẶC ẢNH) ---
+                $featured_media = "";
+                $final_content = $processed_content;
+
+                // ƯU TIÊN 1: Tìm VIDEO (div class="video-responsive")
+                // Regex này tìm đoạn HTML video mà hàm displayContent vừa tạo ra
+                if (preg_match('/(<div class="video-responsive".*?<\/div>)/s', $processed_content, $matches)) {
+                    $featured_media = $matches[1];
+                    // Xóa video khỏi nội dung văn bản bên dưới để tránh lặp
+                    $final_content = str_replace($featured_media, "", $processed_content);
+                } 
+                // ƯU TIÊN 2: Nếu không có Video, thì tìm ẢNH (img)
+                elseif (preg_match('/(<img[^>]+>)/i', $processed_content, $matches)) {
+                    $featured_media = $matches[1];
+                    // Xóa ảnh khỏi nội dung văn bản
+                    $final_content = str_replace($featured_media, "", $processed_content);
                 }
                 // -----------------------------------------
 
@@ -153,15 +164,17 @@
                 echo '<span class="date">' . $date . '</span>';
                 echo '<h3 class="title">' . htmlspecialchars($title) . '</h3>';
 
-                // 1. HIỂN THỊ ẢNH (NẾU CÓ) - LUÔN HIỆN FULL
-                if (!empty($main_image)) {
-                    // Thêm class để CSS định kiểu
-                    echo str_replace('<img', '<img class="post-feature-image"', $main_image);
+                // 1. HIỂN THỊ MEDIA TRONG HỘP VÀNG (NẾU CÓ)
+                if (!empty($featured_media)) {
+                    echo '<div class="media-box">';
+                    echo $featured_media;
+                    echo '</div>';
                 }
 
-                // 2. HIỂN THỊ VĂN BẢN (CÓ THU GỌN)
+                // 2. HIỂN THỊ VĂN BẢN CÒN LẠI (CÓ THU GỌN)
                 echo '<div class="content-wrapper content-collapsed">';
-                echo displayContent($text_content);
+                // Lưu ý: in ra $final_content (đã bị cắt media đi rồi)
+                echo $final_content; 
                 echo '</div>';
                 
                 // Nút Xem Thêm
@@ -248,4 +261,5 @@
 
 </body>
 </html>
+
 
