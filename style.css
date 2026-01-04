@@ -128,51 +128,56 @@ body {
     position: static;
 }
 
-
-/* --- 2. GIAO DIỆN PC / TABLET --- */
+/* --- 2. GIAO DIỆN PC / TABLET (Màn hình > 768px) --- */
 @media (min-width: 768px) {
     .media-box {
-        background-color: #FFF8E1;
+        background-color: #FFF8E1; /* Nền vàng kem */
         border: 1px solid #E6D5B8;
         border-radius: 8px;
         padding: 15px;
-        height: 550px; /* Chiều cao cố định */
+        
+        /* CỐ ĐỊNH CHIỀU CAO KHUNG VÀNG (Bằng chiều cao 1 video dọc chuẩn) */
+        height: 560px; 
+        
+        /* Căn giữa nội dung tuyệt đối */
         display: flex;
         justify-content: center;
         align-items: center;
     }
 
+    /* 1. ẢNH: Hiển thị trọn vẹn */
     .media-box img {
         width: auto;
-        height: 100%;
+        height: 100%; /* Cao bằng khung vàng */
         max-width: 100%;
         object-fit: contain;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
-    /* SỬA LỖI PC: Video nằm gọn trong khung vàng, không bị zoom/cắt */
+    /* 2. VIDEO: SỬA LỖI ZOOM/CẮT HÌNH */
     .media-box .video-responsive {
-        /* Chìa khóa: Khung video luôn giữ tỷ lệ TV (16:9) */
-        aspect-ratio: 16 / 9;
+        /* BỎ ép tỷ lệ 16:9 (aspect-ratio) gây lỗi cắt hình */
+        aspect-ratio: auto !important; 
         
-        /* Chiều cao ăn theo khung vàng */
-        height: 100%;
+        /* Thiết lập kích thước cố định theo khung vàng */
+        height: 100%;       /* Cao 560px */
+        width: 100%;        /* Rộng tối đa */
         
-        /* Chiều rộng tự tính (auto) để không bị méo */
-        width: auto;
-        max-width: 100%; /* Không tràn khung */
-
+        /* Để video tự căn chỉnh bên trong, không bị méo */
         background: #000;
         border-radius: 4px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: hidden; 
     }
 
+    /* Iframe bên trong sẽ tự co giãn (letterbox/pillarbox) bởi Facebook/Youtube */
     .media-box .video-responsive iframe {
         width: 100%;
         height: 100%;
+        border: 0;
     }
 }
 
@@ -290,3 +295,4 @@ button { background: #8B4513; color: #fff; padding: 10px 20px; border: none; cur
 .admin-list th { background-color: #FFF8E1; color: #5D4037; padding: 10px; text-align: left; border-bottom: 2px solid #E6D5B8; }
 .admin-list td { padding: 10px; border-bottom: 1px solid #eee; color: #3E2723; }
 .admin-list tr:hover { background-color: #fafafa; }
+
