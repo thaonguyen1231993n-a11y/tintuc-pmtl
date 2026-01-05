@@ -1,6 +1,6 @@
 <?php
 session_start();
-// --- 1. SỬA LỖI MÚI GIỜ VIỆT NAM ---
+// --- 1. CẤU HÌNH MÚI GIỜ ---
 date_default_timezone_set('Asia/Ho_Chi_Minh'); 
 
 require_once 'db.php';
@@ -13,6 +13,7 @@ function uploadToSupabase($file) {
 
     if (!$supabaseUrl || !$supabaseKey) return ["error" => "Chưa cấu hình Supabase."];
 
+    // Kiểm tra kỹ file đầu vào
     if (!isset($file['tmp_name']) || empty($file['tmp_name'])) {
         return ["error" => "File không hợp lệ hoặc chưa được chọn."];
     }
@@ -40,15 +41,16 @@ function uploadToSupabase($file) {
     }
 }
 
-// --- XỬ LÝ UPLOAD ẢNH QUA AJAX ---
-if (isset($_FILES['ajax_image']) && isset($_SESSION['loggedin'])) {
+// --- XỬ LÝ UPLOAD ẢNH QUA AJAX (ĐÃ SỬA LỖI XUNG ĐỘT) ---
+// Thêm điều kiện !isset($_POST['save_post']) để đảm bảo không chạy nhầm khi đăng bài
+if (isset($_FILES['ajax_image']) && isset($_SESSION['loggedin']) && !isset($_POST['save_post'])) {
     header('Content-Type: application/json');
     $res = uploadToSupabase($_FILES['ajax_image']);
     echo json_encode($res);
     exit; 
 }
 
-// --- CẤU HÌNH ---
+// --- CẤU HÌNH DB & LOGIN ---
 $message = "";
 try {
     $pdo = getDB();
@@ -74,7 +76,7 @@ if (isset($_POST['login'])) {
 }
 if (isset($_GET['logout'])) { session_destroy(); header("Location: admin.php"); exit; }
 
-// --- XỬ LÝ LƯU/XÓA ---
+// --- XỬ LÝ LƯU/XÓA BÀI VIẾT ---
 if (isset($_SESSION['loggedin'])) {
     if (isset($_GET['delete'])) {
         $stmt = $pdo->prepare("DELETE FROM posts WHERE id = :id");
@@ -82,6 +84,7 @@ if (isset($_SESSION['loggedin'])) {
         header("Location: admin.php"); exit;
     }
 
+    // Logic Đăng Bài (Lưu vào DB)
     if (isset($_POST['save_post'])) {
         $title = $_POST['title'];
         $content = $_POST['content']; 
@@ -102,6 +105,7 @@ if (isset($_SESSION['loggedin'])) {
     }
 }
 
+// Lấy dữ liệu sửa
 $editing_post = null; $edit_mode = false; $all_posts = [];
 if (isset($_SESSION['loggedin'])) {
     $all_posts = $pdo->query("SELECT * FROM posts ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
@@ -146,8 +150,10 @@ if (isset($_SESSION['loggedin'])) {
 
         #editor-wrapper { flex-grow: 1; overflow-y: auto; position: relative; }
         .ql-container { border: none !important; font-size: 16px; height: 100%; }
+        /* Style cho nội dung bên trong Editor */
         .ql-editor img { max-width: 100%; height: auto; border-radius: 4px; display: block; margin: 10px auto; }
         .ql-editor iframe { max-width: 100%; margin: 10px auto; display: block; }
+        .ql-editor a { color: #2563eb; text-decoration: underline; }
 
         .custom-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 4px; color: #4b5563; transition: all 0.2s; cursor: pointer; }
         .custom-icon-btn:hover { background-color: #e5e7eb; color: #000; }
@@ -305,24 +311,25 @@ if (isset($_SESSION['loggedin'])) {
             theme: 'snow', modules: { toolbar: '#toolbar-container' }, placeholder: 'Nội dung bài viết...'
         });
 
-        // 1. XỬ LÝ NÚT LINK (CUSTOM)
+        // 1. LINK (CUSTOM)
         document.getElementById('btn-custom-link').onclick = function() {
             var range = quill.getSelection(true);
+            if (!range) return; // Nếu không có focus thì thôi
             var url = prompt("Nhập đường dẫn (URL):", "https://");
             if (url) {
-                // Nếu người dùng bôi đen văn bản, chèn link cho văn bản đó
-                if (range && range.length > 0) {
+                if (range.length > 0) {
                     quill.format('link', url);
                 } else {
-                    // Nếu không bôi đen, hỏi tên hiển thị
-                    var text = prompt("Nhập tên hiển thị cho link:", "Bấm vào đây");
+                    var text = prompt("Nhập tên hiển thị:", "Bấm vào đây");
                     if (text) {
                         quill.insertText(range.index, text, 'link', url);
+                        quill.setSelection(range.index + text.length); // Di chuyển con trỏ sau link
                     }
                 }
             }
         };
 
+        // 2. ẢNH (AJAX)
         const hiddenInput = document.getElementById('hidden-image-input');
         document.getElementById('btn-trigger-image-mobile').onclick = () => hiddenInput.click();
         const btnPc = document.getElementById('btn-trigger-image-pc');
@@ -344,11 +351,16 @@ if (isset($_SESSION['loggedin'])) {
                     quill.deleteText(index, 16); 
                     if (data.success) {
                         quill.insertEmbed(index, 'image', data.success);
+                        quill.setSelection(index + 1); // Xuống dòng
                     } else { alert('Lỗi: ' + data.error); }
-                } catch (e) { alert('Lỗi kết nối'); } finally { this.value = ''; }
+                } catch (e) { 
+                    quill.deleteText(index, 16);
+                    alert('Lỗi kết nối'); 
+                } finally { this.value = ''; }
             }
         };
 
+        // 3. VIDEO
         const videoModal = document.getElementById('modal-video-embed');
         const embedInput = document.getElementById('embed-code-input');
         function toggleVideoModal() { 
@@ -368,6 +380,7 @@ if (isset($_SESSION['loggedin'])) {
             } else { alert("Vui lòng dán đúng mã <iframe>!"); }
         };
 
+        // 4. SUBMIT
         function submitPost() {
             var content = document.querySelector('input[name=content]');
             content.value = quill.root.innerHTML;
