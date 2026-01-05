@@ -86,21 +86,34 @@
         function displayContent($content) {
             if (empty($content)) return "";
 
-            // 1. YOUTUBE
-            $content = preg_replace(
-                '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})([^\s<]*)/', 
-                '<div class="video-responsive"><iframe src="https://www.youtube.com/embed/$1" style="width:100%; height:100%; border:0;" allowfullscreen></iframe></div>', 
+            // --- 1. XỬ LÝ YOUTUBE (Cập nhật nhận diện Shorts) ---
+            $content = preg_replace_callback(
+                '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})([^\s<]*)/', 
+                function($matches) {
+                    $id = $matches[1];
+                    $fullLink = $matches[0];
+                    // Nếu link chứa "shorts", set tỷ lệ dọc (9/16), ngược lại là ngang (16/9)
+                    $ratio = (strpos($fullLink, 'shorts') !== false) ? '9/16' : '16/9';
+                    
+                    return '<div class="video-responsive" style="aspect-ratio: '.$ratio.';">
+                                <iframe src="https://www.youtube.com/embed/'.$id.'" allowfullscreen></iframe>
+                            </div>';
+                }, 
                 $content
             );
 
-            // 2. FACEBOOK
+            // --- 2. XỬ LÝ FACEBOOK (Cập nhật nhận diện Reel) ---
             $content = preg_replace_callback(
                 '/(https?:\/\/(?:www\.|web\.|m\.)?facebook\.com\/(?:watch\/\?v=\d+|[a-zA-Z0-9.]+\/videos\/\d+|reel\/|share\/v\/)[^\s<]*)/',
                 function($matches) {
-                    $videoUrl = urlencode($matches[1]);
-                    return '<div class="video-responsive">
-                                <iframe src="https://www.facebook.com/plugins/video.php?href=' . $videoUrl . '&show_text=false&t=0" 
-                                        style="width:100%; height:100%; border:none; overflow:hidden;" 
+                    $videoUrl = $matches[1];
+                    $encodedUrl = urlencode($videoUrl);
+                    
+                    // Nếu link chứa "reel", set tỷ lệ dọc (9/16)
+                    $ratio = (strpos($videoUrl, 'reel') !== false) ? '9/16' : '16/9';
+
+                    return '<div class="video-responsive" style="aspect-ratio: '.$ratio.';">
+                                <iframe src="https://www.facebook.com/plugins/video.php?href=' . $encodedUrl . '&show_text=false&t=0" 
                                         scrolling="no" frameborder="0" allowfullscreen="true" 
                                         allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
                                 </iframe>
