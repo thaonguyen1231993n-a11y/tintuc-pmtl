@@ -127,16 +127,17 @@ body {
 /* --- 2. GIAO DIỆN PC / TABLET (Màn hình > 768px) --- */
 @media (min-width: 768px) {
     .media-box {
-        background-color: #FFF8E1; /* Nền vàng kem */
+        background-color: #FFF8E1; 
         border: 1px solid #E6D5B8;
         border-radius: 8px;
         padding: 15px;
         
-        /* QUAN TRỌNG: display: table giúp khung co giãn ôm theo nội dung con (video/ảnh) */
         display: table;
         width: auto;
-        margin: 20px auto; /* Căn giữa */
+        margin: 20px auto; 
         max-width: 100%;
+        position: relative; /* Để đặt nút đổi tỷ lệ */
+        transition: all 0.3s ease;
     }
 
     /* ẢNH */
@@ -144,36 +145,76 @@ body {
         display: block;
         max-width: 100%;
         height: auto;
-        max-height: 560px; /* Giới hạn chiều cao ảnh */
+        max-height: 560px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     
-    /* VIDEO TRÊN PC */
+    /* VIDEO */
     .media-box .video-responsive {
-        /* Nền vàng bao quanh video */
         background-color: #000; 
         border-radius: 6px;
         overflow: hidden; 
-        
-        /* Tự động theo nội dung */
         width: 100%;        
-        min-width: 320px; /* Không để quá bé */
-        
-        /* Giới hạn chiều cao: Nếu video dọc quá dài, nó sẽ dừng ở 75% chiều cao màn hình */
-        max-height: 75vh; 
-        
+        min-width: 480px; /* PC thì cho rộng tối thiểu chút cho đẹp */
+        max-width: 800px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        transition: aspect-ratio 0.4s ease; /* Hiệu ứng chuyển mượt */
     }
 
     /* Iframe bên trong */
-    .media-box .video-responsive iframe,
-    .content-wrapper .video-responsive iframe {
+    .media-box .video-responsive iframe {
         width: 100%;
         height: 100%;
         border: 0;
         display: block;
     }
+
+    /* --- NÚT ĐỔI TỶ LỆ (Chỉ hiện trên PC) --- */
+    .btn-ratio-toggle {
+        position: absolute;
+        top: 15px;
+        right: -35px; /* Nằm bên phải khung vàng */
+        background: #D9A404;
+        color: #fff;
+        border: none;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        z-index: 10;
+    }
+    .btn-ratio-toggle:hover {
+        background: #8B4513;
+        transform: scale(1.1);
+    }
+    .btn-ratio-toggle::after {
+        content: "Đổi khung hình";
+        position: absolute;
+        right: 35px;
+        top: 5px;
+        background: #333;
+        color: #fff;
+        padding: 4px 8px;
+        font-size: 11px;
+        border-radius: 4px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: 0.2s;
+    }
+    .btn-ratio-toggle:hover::after { opacity: 1; }
 }
+
+/* Các class tỷ lệ (Dùng chung cả Mobile/PC nếu cần) */
+.ratio-16-9 { aspect-ratio: 16 / 9; }
+.ratio-4-3  { aspect-ratio: 4 / 3; }
+.ratio-1-1  { aspect-ratio: 1 / 1; }
+.ratio-9-16 { aspect-ratio: 9 / 16; }
 
 /* --- XỬ LÝ NỘI DUNG VĂN BẢN (TEXT) --- */
 .content-wrapper {
@@ -287,3 +328,4 @@ button { background: #8B4513; color: #fff; padding: 10px 20px; border: none; cur
 .admin-list th { background-color: #FFF8E1; color: #5D4037; padding: 10px; text-align: left; border-bottom: 2px solid #E6D5B8; }
 .admin-list td { padding: 10px; border-bottom: 1px solid #eee; color: #3E2723; }
 .admin-list tr:hover { background-color: #fafafa; }
+
