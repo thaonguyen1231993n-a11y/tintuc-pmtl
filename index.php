@@ -17,6 +17,9 @@
             <h1>Pháp Môn Tâm Linh 心靈法門</h1>
             <p>Trang tin tức mới nhất</p>
         </div>
+        <a href="admin.php" class="btn-login-header">
+            Đăng nhập
+        </a>
     </header>
 
     <?php
@@ -179,3 +182,4 @@
 </script>
 </body>
 </html>
+
