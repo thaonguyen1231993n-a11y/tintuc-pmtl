@@ -76,12 +76,10 @@
                 $featured_media = "";
                 $final_content = $raw_content;
 
-                // --- LOGIC TÁCH MEDIA MỚI ---
-                // 1. Tìm thẻ IFRAME (Mã nhúng Youtube/Facebook)
-                // Regex này tìm thẻ <iframe>...</iframe> bất kỳ
+                // --- LOGIC TÁCH MEDIA (Hỗ trợ Iframe thủ công) ---
+                // 1. Tìm thẻ IFRAME
                 if (preg_match('/(<iframe.*?>.*?<\/iframe>)/is', $raw_content, $matches)) {
                     $featured_media = $matches[1];
-                    // Xóa iframe khỏi nội dung văn bản dưới
                     $final_content = str_replace($featured_media, "", $raw_content);
                 } 
                 // 2. Nếu không có Iframe, tìm thẻ IMG
@@ -90,24 +88,24 @@
                     $final_content = str_replace($featured_media, "", $raw_content);
                 }
 
-                // Xử lý link text thành thẻ a (cho phần văn bản còn lại)
+                // Xử lý link text
                 $final_content = preg_replace(
                     '/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', 
                     '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', 
                     $final_content
                 );
                 
-                // Chuyển xuống dòng thành <br>
+                // Chuyển xuống dòng
                 $final_content = nl2br($final_content);
 
                 echo '<div class="news-item">';
                 echo '<span class="date">' . $date . '</span>';
                 echo '<h3 class="title">' . htmlspecialchars($title) . '</h3>';
 
-                // HIỂN THỊ MEDIA BOX (KHUNG VÀNG)
+                // HIỂN THỊ MEDIA BOX
                 if (!empty($featured_media)) {
                     echo '<div class="media-box">';
-                    echo $featured_media; // Hiển thị nguyên gốc mã nhúng
+                    echo $featured_media; 
                     echo '</div>';
                 }
 
