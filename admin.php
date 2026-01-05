@@ -41,8 +41,7 @@ function uploadToSupabase($file) {
     }
 }
 
-// --- XỬ LÝ UPLOAD ẢNH QUA AJAX (ĐÃ SỬA LỖI XUNG ĐỘT) ---
-// Thêm điều kiện !isset($_POST['save_post']) để đảm bảo không chạy nhầm khi đăng bài
+// --- XỬ LÝ UPLOAD ẢNH QUA AJAX ---
 if (isset($_FILES['ajax_image']) && isset($_SESSION['loggedin']) && !isset($_POST['save_post'])) {
     header('Content-Type: application/json');
     $res = uploadToSupabase($_FILES['ajax_image']);
@@ -84,7 +83,6 @@ if (isset($_SESSION['loggedin'])) {
         header("Location: admin.php"); exit;
     }
 
-    // Logic Đăng Bài (Lưu vào DB)
     if (isset($_POST['save_post'])) {
         $title = $_POST['title'];
         $content = $_POST['content']; 
@@ -105,7 +103,6 @@ if (isset($_SESSION['loggedin'])) {
     }
 }
 
-// Lấy dữ liệu sửa
 $editing_post = null; $edit_mode = false; $all_posts = [];
 if (isset($_SESSION['loggedin'])) {
     $all_posts = $pdo->query("SELECT * FROM posts ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
@@ -311,10 +308,21 @@ if (isset($_SESSION['loggedin'])) {
             theme: 'snow', modules: { toolbar: '#toolbar-container' }, placeholder: 'Nội dung bài viết...'
         });
 
-        // 1. LINK (CUSTOM)
+        // 1. DÁN NHƯ NOTEPAD (PLAIN TEXT)
+        quill.root.addEventListener('paste', function(e) {
+            e.preventDefault();
+            var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            var range = quill.getSelection();
+            if (range) {
+                quill.insertText(range.index, text);
+                quill.setSelection(range.index + text.length);
+            }
+        });
+
+        // 2. LINK
         document.getElementById('btn-custom-link').onclick = function() {
             var range = quill.getSelection(true);
-            if (!range) return; // Nếu không có focus thì thôi
+            if (!range) return; 
             var url = prompt("Nhập đường dẫn (URL):", "https://");
             if (url) {
                 if (range.length > 0) {
@@ -323,13 +331,13 @@ if (isset($_SESSION['loggedin'])) {
                     var text = prompt("Nhập tên hiển thị:", "Bấm vào đây");
                     if (text) {
                         quill.insertText(range.index, text, 'link', url);
-                        quill.setSelection(range.index + text.length); // Di chuyển con trỏ sau link
+                        quill.setSelection(range.index + text.length);
                     }
                 }
             }
         };
 
-        // 2. ẢNH (AJAX)
+        // 3. ẢNH
         const hiddenInput = document.getElementById('hidden-image-input');
         document.getElementById('btn-trigger-image-mobile').onclick = () => hiddenInput.click();
         const btnPc = document.getElementById('btn-trigger-image-pc');
@@ -351,7 +359,7 @@ if (isset($_SESSION['loggedin'])) {
                     quill.deleteText(index, 16); 
                     if (data.success) {
                         quill.insertEmbed(index, 'image', data.success);
-                        quill.setSelection(index + 1); // Xuống dòng
+                        quill.setSelection(index + 1); 
                     } else { alert('Lỗi: ' + data.error); }
                 } catch (e) { 
                     quill.deleteText(index, 16);
@@ -360,7 +368,7 @@ if (isset($_SESSION['loggedin'])) {
             }
         };
 
-        // 3. VIDEO
+        // 4. VIDEO
         const videoModal = document.getElementById('modal-video-embed');
         const embedInput = document.getElementById('embed-code-input');
         function toggleVideoModal() { 
@@ -380,7 +388,7 @@ if (isset($_SESSION['loggedin'])) {
             } else { alert("Vui lòng dán đúng mã <iframe>!"); }
         };
 
-        // 4. SUBMIT
+        // 5. SUBMIT
         function submitPost() {
             var content = document.querySelector('input[name=content]');
             content.value = quill.root.innerHTML;
