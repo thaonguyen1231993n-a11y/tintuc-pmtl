@@ -17,15 +17,11 @@
             <h1>Pháp Môn Tâm Linh 心靈法門</h1>
             <p>Trang tin tức mới nhất</p>
         </div>
-        <a href="admin.php" class="btn-login-header">
-            Đăng nhập
-        </a>
+        <a href="admin.php" class="btn-login-header">Đăng nhập</a>
     </header>
 
     <?php
     require_once 'db.php';
-
-    // --- CẤU HÌNH ---
     $limit = 10; 
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     if ($page < 1) $page = 1;
@@ -34,17 +30,13 @@
 
     try {
         $pdo = getDB();
-        
-        // ĐẾM TỔNG BÀI
         $sqlCount = "SELECT COUNT(*) FROM posts";
         if (!empty($filter_date)) $sqlCount .= " WHERE DATE(created_at) = :fdate";
         $stmtCount = $pdo->prepare($sqlCount);
-        if (!empty($filter_date)) $stmtCount->execute([':fdate' => $filter_date]);
-        else $stmtCount->execute();
+        if (!empty($filter_date)) $stmtCount->execute([':fdate' => $filter_date]); else $stmtCount->execute();
         $total_records = $stmtCount->fetchColumn();
         $total_pages = ceil($total_records / $limit);
 
-        // LẤY DỮ LIỆU
         $sql = "SELECT * FROM posts";
         if (!empty($filter_date)) $sql .= " WHERE DATE(created_at) = :fdate";
         $sql .= " ORDER BY id DESC LIMIT :limit OFFSET :offset";
@@ -72,40 +64,29 @@
         if ($stmt->rowCount() > 0) {
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $title = $row['title'];
-                // Lấy nội dung gốc từ DB
                 $raw_content = $row['content'];
                 $date = date("d/m/Y H:i", strtotime($row['created_at']));
 
                 $featured_media = "";
                 $final_content = $raw_content;
 
-                // --- LOGIC TÁCH MEDIA (Hỗ trợ Iframe thủ công) ---
-                // 1. Tìm thẻ IFRAME
+                // TÁCH MEDIA
                 if (preg_match('/(<iframe.*?>.*?<\/iframe>)/is', $raw_content, $matches)) {
                     $featured_media = $matches[1];
                     $final_content = str_replace($featured_media, "", $raw_content);
                 } 
-                // 2. Nếu không có Iframe, tìm thẻ IMG
                 elseif (preg_match('/(<img[^>]+>)/i', $raw_content, $matches)) {
                     $featured_media = $matches[1];
                     $final_content = str_replace($featured_media, "", $raw_content);
                 }
 
-                // Xử lý link text
-                $final_content = preg_replace(
-                    '/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', 
-                    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', 
-                    $final_content
-                );
-                
-                // Chuyển xuống dòng
+                $final_content = preg_replace('/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', $final_content);
                 $final_content = nl2br($final_content);
 
                 echo '<div class="news-item">';
                 echo '<span class="date">' . $date . '</span>';
                 echo '<h3 class="title">' . htmlspecialchars($title) . '</h3>';
 
-                // HIỂN THỊ MEDIA BOX
                 if (!empty($featured_media)) {
                     echo '<div class="media-box">';
                     echo $featured_media; 
@@ -115,7 +96,6 @@
                 echo '<div class="content-wrapper content-collapsed">';
                 echo $final_content; 
                 echo '</div>';
-                
                 echo '<button class="btn-readmore" onclick="toggleContent(this)">Xem thêm ▼</button>';
                 echo '</div>';
             }
@@ -150,7 +130,7 @@
         echo '<p class="empty" style="color:red">Lỗi kết nối: ' . htmlspecialchars($e->getMessage()) . '</p>';
     }
     ?>
-    <footer><a href="admin.php">Đăng nhập quản trị</a></footer>
+    <footer></footer>
 </div>
 
 <script>
@@ -167,8 +147,10 @@
             btn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
     }
+
     window.addEventListener('load', function() {
         setTimeout(function() {
+            // 1. Xử lý thu gọn bài viết
             var contents = document.querySelectorAll('.content-wrapper');
             contents.forEach(function(div) {
                 if (div.scrollHeight <= 280) {
@@ -177,9 +159,23 @@
                     if (btn && btn.classList.contains('btn-readmore')) btn.style.display = 'none';
                 }
             });
+
+            // 2. Xử lý Tự động tỷ lệ Video (QUAN TRỌNG)
+            var iframes = document.querySelectorAll('.media-box iframe');
+            iframes.forEach(function(iframe) {
+                var w = iframe.getAttribute('width');
+                var h = iframe.getAttribute('height');
+                // Nếu mã nhúng có sẵn kích thước, ta dùng nó để tính tỷ lệ
+                if (w && h) {
+                    iframe.style.aspectRatio = w + " / " + h;
+                } else {
+                    // Nếu không có, mặc định là 16/9
+                    iframe.style.aspectRatio = "16 / 9";
+                }
+            });
+
         }, 500); 
     });
 </script>
 </body>
 </html>
-
