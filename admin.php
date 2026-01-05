@@ -4,7 +4,7 @@ require_once 'db.php';
 
 $message = "";
 
-// --- CẤU HÌNH DATABASE & LOGIN (GIỮ NGUYÊN CỦA BẠN) ---
+// --- CẤU HÌNH DATABASE & LOGIN ---
 try {
     $pdo = getDB();
 } catch (Exception $e) {
@@ -28,7 +28,7 @@ function checkLogin($input_user, $input_pass) {
     return false;
 }
 
-// --- HÀM UPLOAD ẢNH SUPABASE (GIỮ NGUYÊN CỦA BẠN) ---
+// --- HÀM UPLOAD ẢNH SUPABASE ---
 function uploadToSupabase($file) {
     $supabaseUrl = getenv('SUPABASE_URL');
     $supabaseKey = getenv('SUPABASE_KEY');
@@ -78,20 +78,17 @@ if (isset($_GET['logout'])) {
 
 // --- XỬ LÝ LƯU/XÓA BÀI VIẾT ---
 if (isset($_SESSION['loggedin'])) {
-    // Xóa bài
     if (isset($_GET['delete'])) {
         $stmt = $pdo->prepare("DELETE FROM posts WHERE id = :id");
         $stmt->execute([':id' => $_GET['delete']]);
         header("Location: admin.php"); exit;
     }
 
-    // Lưu bài
     if (isset($_POST['save_post'])) {
         $title = $_POST['title'];
-        $content = $_POST['content']; // Nội dung này sẽ được JS lấy từ Quill
+        $content = $_POST['content']; 
         $edit_id = $_POST['edit_id'];
 
-        // Xử lý ảnh upload
         if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
             $uploadResult = uploadToSupabase($_FILES['image']);
             if (isset($uploadResult['success'])) {
@@ -107,7 +104,6 @@ if (isset($_SESSION['loggedin'])) {
                 $stmt = $pdo->prepare("UPDATE posts SET title = :title, content = :content WHERE id = :id");
                 if ($stmt->execute([':title' => $title, ':content' => $content, ':id' => $edit_id])) {
                     $message = "Đã cập nhật bài viết!";
-                    // Reset form sau khi lưu
                     $_GET['edit'] = null; 
                 }
             } else {
@@ -145,33 +141,35 @@ if (isset($_SESSION['loggedin'])) {
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    <link rel="stylesheet" href="admin_style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         
-        /* Tùy chỉnh Quill để full height */
+        /* CSS Quill */
         #editor-wrapper {
             display: flex; flex-direction: column; 
             background: white; border-radius: 0 0 8px 8px; border: 1px solid #d1d5db; border-top: 0;
-            min-height: 400px; /* Chiều cao tối thiểu */
+            min-height: 500px; /* Tăng chiều cao mặc định lên */
         }
-        .ql-container { flex-grow: 1; font-size: 16px; min-height: 300px; }
-        .ql-toolbar { background: #f9fafb; border-radius: 8px 8px 0 0; border-color: #d1d5db !important; }
-        .ql-editor { min-height: 300px; }
+        .ql-container { flex-grow: 1; font-size: 16px; min-height: 400px; font-family: 'Inter', sans-serif;}
+        .ql-toolbar { background: #f9fafb; border-radius: 8px 8px 0 0; border-color: #d1d5db !important; display: flex; flex-wrap: wrap; align-items: center; }
+        .ql-editor { min-height: 400px; }
         
-        /* Mobile adjustments */
-        @media (max-width: 768px) {
-            .container-custom { padding: 10px; }
-            .ql-toolbar { padding: 5px; }
-        }
+        /* Custom buttons in toolbar */
+        .ql-custom-buttons { display: flex; align-items: center; gap: 5px; border-left: 1px solid #ddd; padding-left: 8px; margin-left: 8px;}
+        .ql-custom-buttons button { width: 28px !important; height: 24px !important; }
+
+        /* Modal transitions */
+        .modal { transition: opacity 0.25s ease; }
+        body.modal-active { overflow-x: hidden; overflow-y: hidden !important; }
     </style>
 </head>
 <body class="text-gray-800">
 
     <?php if(!empty($message)): ?>
-    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-[60]">
         <?php echo $message; ?>
     </div>
     <script>setTimeout(() => document.getElementById('toast').remove(), 3000);</script>
@@ -182,165 +180,200 @@ if (isset($_SESSION['loggedin'])) {
         <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Đăng Nhập Admin</h2>
             <form method="post" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Username</label>
-                    <input type="text" name="username" required class="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" name="password" required class="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50">
-                </div>
-                <button type="submit" name="login" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition">
-                    Đăng Nhập
-                </button>
+                <input type="text" name="username" required placeholder="Username" class="w-full px-4 py-2 border rounded-lg bg-gray-50">
+                <input type="password" name="password" required placeholder="Password" class="w-full px-4 py-2 border rounded-lg bg-gray-50">
+                <button type="submit" name="login" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700">Đăng Nhập</button>
             </form>
         </div>
     </div>
 
     <?php else: ?>
     <header class="bg-white border-b sticky top-0 z-40 shadow-sm">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <h1 class="font-bold text-gray-800 text-lg md:text-xl">Quản Trị</h1>
+                <h1 class="font-bold text-gray-800 text-lg hidden md:block">Quản Trị</h1>
                 <a href="index.php" target="_blank" class="text-xs bg-gray-100 px-2 py-1 rounded hover:bg-gray-200">Xem Web</a>
                 <a href="admin.php" class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200">+ Viết mới</a>
+                
+                <button id="btn-open-list" class="flex items-center gap-1 text-xs bg-yellow-100 text-yellow-800 px-3 py-1 rounded hover:bg-yellow-200 font-bold border border-yellow-300">
+                    📂 Danh Sách Bài Viết
+                </button>
             </div>
             <div class="flex items-center gap-3">
-                <span class="text-sm text-gray-500 hidden md:inline">Xin chào, <?php echo htmlspecialchars($_SESSION['username']); ?></span>
-                <a href="?logout=true" class="text-sm text-red-600 hover:text-red-800 font-medium">Đăng xuất</a>
+                <span class="text-sm text-gray-500 hidden md:inline"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                <a href="?logout=true" class="text-sm text-red-600 hover:text-red-800 font-medium">Thoát</a>
             </div>
         </div>
     </header>
 
-    <div class="max-w-5xl mx-auto p-4 md:p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="max-w-4xl mx-auto p-4 md:p-6">
         
-        <div class="md:col-span-2 space-y-4">
-            <form method="post" enctype="multipart/form-data" id="postForm">
-                <input type="hidden" name="edit_id" value="<?php echo $edit_mode ? $editing_post['id'] : ''; ?>">
-                
-                <input type="text" name="title" required placeholder="Nhập tiêu đề bài viết..." 
-                       value="<?php echo $edit_mode ? htmlspecialchars($editing_post['title']) : ''; ?>"
-                       class="w-full text-xl font-bold border-none focus:ring-0 p-2 bg-transparent placeholder-gray-400 outline-none">
-                
-                <div class="bg-white p-3 rounded-lg border border-dashed border-gray-300 mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Ảnh minh họa (Upload lên Supabase):</label>
-                    <input type="file" name="image" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                </div>
+        <form method="post" enctype="multipart/form-data" id="postForm">
+            <input type="hidden" name="edit_id" value="<?php echo $edit_mode ? $editing_post['id'] : ''; ?>">
+            
+            <input type="text" name="title" required placeholder="Nhập tiêu đề bài viết..." 
+                   value="<?php echo $edit_mode ? htmlspecialchars($editing_post['title']) : ''; ?>"
+                   class="w-full text-2xl font-bold border-none focus:ring-0 p-2 bg-transparent placeholder-gray-400 outline-none mb-4">
+            
+            <div class="bg-white p-3 rounded-lg border border-dashed border-gray-300 mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Ảnh minh họa (Upload lên Supabase):</label>
+                <input type="file" name="image" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            </div>
 
-                <div id="toolbar-container">
-                    <span class="ql-formats">
-                        <button class="ql-bold"></button>
-                        <button class="ql-italic"></button>
-                        <button class="ql-underline"></button>
-                        <select class="ql-header">
-                            <option value="1"></option>
-                            <option value="2"></option>
-                            <option selected></option>
-                        </select>
-                    </span>
-                    <span class="ql-formats">
-                        <button class="ql-list" value="ordered"></button>
-                        <button class="ql-list" value="bullet"></button>
-                        <button class="ql-link"></button>
-                        <button class="ql-clean"></button>
-                    </span>
-                    <span class="ql-formats border-l pl-2 ml-2">
-                        <button type="button" id="btn-insert-video" title="Chèn Link Video" style="width:auto; padding:0 5px;">
-                            ▶ Video
-                        </button>
-                        <button type="button" id="btn-paste" title="Dán từ Clipboard">📋</button>
-                        <button type="button" id="btn-clean-text" title="Làm sạch văn bản">🧹</button>
-                    </span>
-                </div>
-
-                <div id="editor-wrapper">
-                    <div id="editor">
-                        <?php echo $edit_mode ? $editing_post['content'] : ''; ?>
-                    </div>
-                </div>
-
-                <input type="hidden" name="content" id="hiddenContent">
-
-                <div class="mt-4 flex gap-3">
-                    <button type="submit" name="save_post" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-md transition">
-                        <?php echo $edit_mode ? "Lưu Thay Đổi" : "🚀 Đăng Bài Ngay"; ?>
+            <div id="toolbar-container">
+                <span class="ql-formats">
+                    <button class="ql-bold"></button>
+                    <button class="ql-italic"></button>
+                    <button class="ql-underline"></button>
+                    <select class="ql-header">
+                        <option value="1"></option>
+                        <option value="2"></option>
+                        <option selected></option>
+                    </select>
+                </span>
+                <span class="ql-formats">
+                    <button class="ql-list" value="ordered"></button>
+                    <button class="ql-list" value="bullet"></button>
+                    <button class="ql-link"></button>
+                    <button class="ql-clean"></button>
+                </span>
+                <span class="ql-formats ql-custom-buttons">
+                    <button type="button" id="btn-insert-video" title="Dán mã nhúng Video" style="width:auto; padding:0 5px;">
+                        ▶ Embed
                     </button>
-                    <?php if($edit_mode): ?>
-                        <a href="admin.php" class="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300">Hủy</a>
-                    <?php endif; ?>
-                </div>
-            </form>
-        </div>
+                    <button type="button" id="btn-paste" title="Dán từ Clipboard">📋</button>
+                    <button type="button" id="btn-clean-text" title="Làm sạch văn bản">🧹</button>
+                </span>
+            </div>
 
-        <div class="md:col-span-1">
-            <div class="bg-white rounded-lg shadow border overflow-hidden">
-                <div class="p-3 bg-gray-50 border-b font-bold text-gray-700">Danh sách bài viết</div>
-                <div class="max-h-[600px] overflow-y-auto">
-                    <?php if (empty($all_posts)): ?>
-                        <p class="p-4 text-gray-500 text-center text-sm">Chưa có bài viết nào.</p>
-                    <?php else: ?>
-                        <ul class="divide-y divide-gray-100">
-                            <?php foreach ($all_posts as $post): ?>
-                                <li class="p-3 hover:bg-blue-50 transition group">
-                                    <div class="font-medium text-gray-800 line-clamp-2 mb-1">
-                                        <?php echo htmlspecialchars($post['title']); ?>
-                                    </div>
-                                    <div class="flex justify-between items-center text-xs">
-                                        <span class="text-gray-400"><?php echo date("d/m", strtotime($post['created_at'])); ?></span>
-                                        <div class="flex gap-2">
-                                            <a href="admin.php?edit=<?php echo $post['id']; ?>" class="text-blue-600 hover:underline">Sửa</a>
-                                            <a href="admin.php?delete=<?php echo $post['id']; ?>" onclick="return confirm('Xóa bài này?')" class="text-red-600 hover:underline">Xóa</a>
-                                        </div>
-                                    </div>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php endif; ?>
+            <div id="editor-wrapper">
+                <div id="editor">
+                    <?php echo $edit_mode ? $editing_post['content'] : ''; ?>
                 </div>
             </div>
-        </div>
 
+            <input type="hidden" name="content" id="hiddenContent">
+
+            <div class="mt-6 flex gap-3">
+                <button type="submit" name="save_post" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 shadow-md transition text-lg">
+                    <?php echo $edit_mode ? "Lưu Thay Đổi" : "Đăng Bài Ngay"; ?>
+                </button>
+                <?php if($edit_mode): ?>
+                    <a href="admin.php" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300">Hủy</a>
+                <?php endif; ?>
+            </div>
+        </form>
     </div>
-    
+
+    <div id="modal-post-list" class="hidden fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex">
+        <div class="relative p-6 bg-white w-full max-w-2xl m-auto flex-col flex rounded-lg shadow-xl h-[80vh]">
+            <div class="flex justify-between items-center pb-4 border-b">
+                <h3 class="text-xl font-bold text-gray-800">Danh Sách Bài Viết</h3>
+                <button class="modal-close cursor-pointer z-50 text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <div class="flex-grow overflow-y-auto mt-4">
+                <?php if (empty($all_posts)): ?>
+                    <p class="text-center text-gray-500 mt-10">Chưa có bài viết nào.</p>
+                <?php else: ?>
+                    <ul class="divide-y divide-gray-100">
+                        <?php foreach ($all_posts as $post): ?>
+                            <li class="p-4 hover:bg-blue-50 transition group rounded-lg">
+                                <div class="font-bold text-gray-800 mb-1">
+                                    <?php echo htmlspecialchars($post['title']); ?>
+                                </div>
+                                <div class="flex justify-between items-center text-sm">
+                                    <span class="text-gray-400"><?php echo date("d/m/Y H:i", strtotime($post['created_at'])); ?></span>
+                                    <div class="flex gap-3">
+                                        <a href="admin.php?edit=<?php echo $post['id']; ?>" class="text-blue-600 hover:font-bold">Sửa</a>
+                                        <a href="admin.php?delete=<?php echo $post['id']; ?>" onclick="return confirm('Xóa bài này?')" class="text-red-600 hover:font-bold">Xóa</a>
+                                    </div>
+                                </div>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-video-embed" class="hidden fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex">
+        <div class="relative p-6 bg-white w-full max-w-lg m-auto flex-col flex rounded-lg shadow-xl">
+            <div class="flex justify-between items-center pb-2">
+                <h3 class="text-lg font-bold text-gray-800">Chèn Video (Mã Nhúng)</h3>
+                <button class="video-modal-close cursor-pointer text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button>
+            </div>
+            <p class="text-sm text-gray-500 mb-3">Copy mã iframe từ Youtube/Facebook và dán vào đây:</p>
+            <textarea id="embed-code-input" rows="5" class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 text-sm font-mono" placeholder='<iframe src="...'></iframe>'></textarea>
+            <div class="mt-4 flex justify-end gap-2">
+                <button class="video-modal-close px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">Hủy</button>
+                <button id="btn-confirm-embed" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">Chèn Video</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // 1. Khởi tạo Quill
         var quill = new Quill('#editor', {
             theme: 'snow',
-            modules: {
-                toolbar: '#toolbar-container'
-            },
+            modules: { toolbar: '#toolbar-container' },
             placeholder: 'Soạn nội dung tại đây...'
         });
 
-        // 2. Xử lý khi Submit Form
         var form = document.getElementById('postForm');
         form.onsubmit = function() {
-            // Lấy HTML từ Quill và gán vào input ẩn để PHP đọc được
             var content = document.querySelector('input[name=content]');
             content.value = quill.root.innerHTML;
-            
-            // Validate sơ bộ
             if(content.value.trim() === '<p><br></p>' || content.value.trim() === '') {
-                alert('Nội dung không được để trống!');
-                return false;
+                alert('Nội dung không được để trống!'); return false;
             }
             return true;
         };
 
-        // 3. Các nút chức năng Custom
-        
-        // --- Chèn Video (Giữ logic cũ của bạn nhưng tương thích Quill) ---
-        document.getElementById('btn-insert-video').addEventListener('click', function() {
-            let link = prompt("Dán đường link video (Youtube/Facebook) vào đây:", "");
-            if (link && link.trim() !== "") {
-                const range = quill.getSelection(true);
-                // Chèn link dưới dạng text thuần + xuống dòng để script hiển thị video ở index.php bắt được
-                quill.insertText(range.index, '\n' + link.trim() + '\n', 'user');
-                quill.setSelection(range.index + link.length + 2);
-            }
-        });
+        // --- XỬ LÝ MODAL DANH SÁCH BÀI VIẾT ---
+        const listModal = document.getElementById('modal-post-list');
+        const openListBtn = document.getElementById('btn-open-list');
+        const closeListBtns = document.querySelectorAll('.modal-close');
 
-        // --- Dán từ Clipboard ---
+        function toggleListModal() {
+            listModal.classList.toggle('hidden');
+            document.body.classList.toggle('modal-active');
+        }
+
+        if(openListBtn) openListBtn.onclick = toggleListModal;
+        closeListBtns.forEach(btn => btn.onclick = toggleListModal);
+
+        // --- XỬ LÝ MODAL CHÈN VIDEO (MÃ NHÚNG) ---
+        const videoModal = document.getElementById('modal-video-embed');
+        const openVideoBtn = document.getElementById('btn-insert-video');
+        const closeVideoBtns = document.querySelectorAll('.video-modal-close');
+        const confirmEmbedBtn = document.getElementById('btn-confirm-embed');
+        const embedInput = document.getElementById('embed-code-input');
+
+        function toggleVideoModal() {
+            videoModal.classList.toggle('hidden');
+            if(!videoModal.classList.contains('hidden')) {
+                embedInput.value = ''; // Reset khi mở
+                embedInput.focus();
+            }
+        }
+
+        if(openVideoBtn) openVideoBtn.onclick = toggleVideoModal;
+        closeVideoBtns.forEach(btn => btn.onclick = toggleVideoModal);
+
+        // Khi bấm nút "Chèn Video" trong Modal
+        confirmEmbedBtn.onclick = function() {
+            const code = embedInput.value.trim();
+            if(code) {
+                const range = quill.getSelection(true);
+                // Chèn mã iframe vào Quill
+                // Mẹo: Chèn text thuần bao quanh bởi xuống dòng để PHP nhận diện
+                quill.insertText(range.index, '\n' + code + '\n', 'user');
+                toggleVideoModal();
+            } else {
+                alert("Vui lòng dán mã nhúng vào!");
+            }
+        };
+
+        // --- CÁC NÚT KHÁC ---
         document.getElementById('btn-paste').addEventListener('click', async () => {
             try {
                 const text = await navigator.clipboard.readText();
@@ -348,23 +381,23 @@ if (isset($_SESSION['loggedin'])) {
                     const range = quill.getSelection(true);
                     quill.insertText(range.index, text);
                 }
-            } catch (err) {
-                alert('Trình duyệt không cho phép đọc Clipboard. Hãy dùng Ctrl+V.');
-            }
+            } catch (err) { alert('Không đọc được Clipboard. Dùng Ctrl+V.'); }
         });
 
-        // --- Làm sạch văn bản (Xóa Emoji, Format lạ) ---
         document.getElementById('btn-clean-text').addEventListener('click', () => {
-            if(confirm('Bạn có muốn làm sạch văn bản (xóa định dạng thừa, emoji)?')) {
+            if(confirm('Làm sạch văn bản?')) {
                 let text = quill.getText();
-                // Logic làm sạch cơ bản (giống mẫu bạn gửi)
                 text = text.replace(/([\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '');
                 quill.setText(text);
             }
         });
 
+        // Đóng modal khi click ra ngoài
+        window.onclick = function(event) {
+            if (event.target == listModal) toggleListModal();
+            if (event.target == videoModal) toggleVideoModal();
+        }
     </script>
     <?php endif; ?>
 </body>
 </html>
-
