@@ -132,46 +132,37 @@ body {
         border-radius: 8px;
         padding: 15px;
         
-        /* CỐ ĐỊNH CHIỀU CAO: 560px */
-        height: 560px; 
-        
-        /* Căn giữa nội dung */
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        /* QUAN TRỌNG: display: table giúp khung co giãn ôm theo nội dung con (video/ảnh) */
+        display: table;
+        width: auto;
+        margin: 20px auto; /* Căn giữa */
+        max-width: 100%;
     }
 
     /* ẢNH */
     .media-box img {
-        width: auto;
-        height: 100%;
+        display: block;
         max-width: 100%;
-        object-fit: contain;
+        height: auto;
+        max-height: 560px; /* Giới hạn chiều cao ảnh */
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     
-    /* VIDEO TRÊN PC: Đây là đoạn sửa lỗi Zoom */
+    /* VIDEO TRÊN PC */
     .media-box .video-responsive {
         /* Nền vàng bao quanh video */
-        background-color: #FFF8E1; 
-        border: 1px solid #E6D5B8;
-        border-radius: 8px;
-        padding: 10px; /* Padding nhỏ hơn một chút cho gọn */
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        
-        height: 100%;       /* Cao bằng khung 560px */
-        width: 100%;        /* Rộng tối đa */
-        max-width: 900px;   /* [QUAN TRỌNG] Giới hạn chiều rộng để không bị quá dài gây zoom */
-        
-        /* Canh giữa video */
-        margin: 0 auto;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        background-color: #000; 
+        border-radius: 6px;
         overflow: hidden; 
         
-        /* Bỏ aspect-ratio cứng để Facebook tự điều chỉnh */
-        aspect-ratio: auto;
+        /* Tự động theo nội dung */
+        width: 100%;        
+        min-width: 320px; /* Không để quá bé */
+        
+        /* Giới hạn chiều cao: Nếu video dọc quá dài, nó sẽ dừng ở 75% chiều cao màn hình */
+        max-height: 75vh; 
+        
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
 
     /* Iframe bên trong */
@@ -180,17 +171,7 @@ body {
         width: 100%;
         height: 100%;
         border: 0;
-    }
-    
-    /* Xử lý riêng cho Media Box chứa Video: Reset nền của box cha */
-    .media-box:has(.video-responsive) {
-        background: transparent;
-        border: none;
-        padding: 0;
-        box-shadow: none;
-        /* Giữ chiều cao để layout không bị nhảy */
-        height: 560px; 
-        display: flex;
+        display: block;
     }
 }
 
