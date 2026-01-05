@@ -21,6 +21,7 @@
     </header>
 
     <?php
+    date_default_timezone_set('Asia/Ho_Chi_Minh');
     require_once 'db.php';
     $limit = 10; 
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -179,3 +180,4 @@
 </script>
 </body>
 </html>
+
