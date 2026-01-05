@@ -1,6 +1,6 @@
 <?php
 session_start();
-// --- 1. CẤU HÌNH MÚI GIỜ ---
+// --- 1. CẤU HÌNH MÚI GIỜ CHUẨN ---
 date_default_timezone_set('Asia/Ho_Chi_Minh'); 
 
 require_once 'db.php';
@@ -146,6 +146,7 @@ if (isset($_SESSION['loggedin'])) {
 
         #editor-wrapper { flex-grow: 1; overflow-y: auto; position: relative; }
         .ql-container { border: none !important; font-size: 16px; height: 100%; }
+        /* Style cho nội dung bên trong Editor */
         .ql-editor img { max-width: 100%; height: auto; border-radius: 4px; display: block; margin: 10px auto; }
         .ql-editor iframe { max-width: 100%; margin: 10px auto; display: block; }
         .ql-editor a { color: #2563eb; text-decoration: underline; }
@@ -233,6 +234,7 @@ if (isset($_SESSION['loggedin'])) {
                             </button>
                         </span>
                     </div>
+
                     <div id="editor-wrapper">
                         <div id="editor"><?php echo $edit_mode ? $editing_post['content'] : ''; ?></div>
                     </div>
@@ -247,10 +249,17 @@ if (isset($_SESSION['loggedin'])) {
             <button id="btn-open-list-mobile" class="flex flex-col items-center text-gray-600 hover:text-blue-600 w-1/4">
                 <span class="text-xl">📂</span><span class="text-[10px] font-medium mt-1">Danh Sách</span>
             </button>
+            
             <button id="btn-trigger-image-mobile" class="flex flex-col items-center text-gray-600 hover:text-blue-600 w-1/4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
                 <span class="text-[10px] font-medium mt-1">Thêm Ảnh</span>
             </button>
+
+            <button id="btn-insert-video-mobile" class="flex flex-col items-center text-gray-600 hover:text-blue-600 w-1/4">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" /></svg>
+                <span class="text-[10px] font-medium mt-1">Thêm Video</span>
+            </button>
+
             <button id="btn-mobile-save" class="flex flex-col items-center text-blue-600 w-1/4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" /></svg>
                 <span class="text-[10px] font-bold mt-1">Đăng Bài</span>
@@ -301,26 +310,21 @@ if (isset($_SESSION['loggedin'])) {
             theme: 'snow', modules: { toolbar: '#toolbar-container' }, placeholder: 'Nội dung bài viết...'
         });
 
-        // --- SỬA LỖI KHÔNG DÁN ĐƯỢC VÀ CHỈ DÁN PLAIN TEXT ---
+        // --- 1. XỬ LÝ DÁN SIÊU SẠCH (PLAIN TEXT) ---
         quill.root.addEventListener('paste', function(e) {
-            e.preventDefault(); // Chặn hành động dán mặc định (có HTML)
-            
-            // Lấy văn bản thuần (Plain Text)
+            e.preventDefault(); 
             var text = (e.clipboardData || window.clipboardData).getData('text/plain');
-            
             if (text) {
-                // Ép lấy tiêu điểm (Focus) nếu bị mất
                 var range = quill.getSelection(true); 
-                var index = (range) ? range.index : quill.getLength(); // Nếu không có con trỏ, dán vào cuối
-                
-                // Chèn văn bản thuần
+                var index = (range) ? range.index : quill.getLength();
+                if (range && range.length > 0) quill.deleteText(range.index, range.length);
                 quill.insertText(index, text, 'user');
-                
-                // Đưa con trỏ ra sau văn bản vừa dán
                 quill.setSelection(index + text.length);
+                quill.scrollIntoView(); 
             }
         });
 
+        // 2. LINK
         document.getElementById('btn-custom-link').onclick = function() {
             var range = quill.getSelection(true);
             if (!range) return; 
@@ -338,6 +342,7 @@ if (isset($_SESSION['loggedin'])) {
             }
         };
 
+        // 3. ẢNH (AJAX)
         const hiddenInput = document.getElementById('hidden-image-input');
         document.getElementById('btn-trigger-image-mobile').onclick = () => hiddenInput.click();
         const btnPc = document.getElementById('btn-trigger-image-pc');
@@ -368,6 +373,7 @@ if (isset($_SESSION['loggedin'])) {
             }
         };
 
+        // 4. VIDEO
         const videoModal = document.getElementById('modal-video-embed');
         const embedInput = document.getElementById('embed-code-input');
         function toggleVideoModal() { 
@@ -375,6 +381,7 @@ if (isset($_SESSION['loggedin'])) {
             if(!videoModal.classList.contains('hidden')) embedInput.focus();
         }
         document.getElementById('btn-insert-video').onclick = toggleVideoModal;
+        document.getElementById('btn-insert-video-mobile').onclick = toggleVideoModal; // Sự kiện cho Mobile
         document.querySelectorAll('.video-modal-close').forEach(b => b.onclick = toggleVideoModal);
 
         document.getElementById('btn-confirm-embed').onclick = function() {
@@ -387,6 +394,7 @@ if (isset($_SESSION['loggedin'])) {
             } else { alert("Vui lòng dán đúng mã <iframe>!"); }
         };
 
+        // 5. SUBMIT
         function submitPost() {
             var content = document.querySelector('input[name=content]');
             content.value = quill.root.innerHTML;
