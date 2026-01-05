@@ -85,64 +85,45 @@ body {
 .news-item .date { font-size: 12px; background: #FFF8E1; color: #A67B5B; padding: 3px 8px; border-radius: 4px; display: inline-block; }
 
 /* =========================================
-   MEDIA BOX (KHUNG VÀNG HIỂN THỊ ẢNH/VIDEO)
+   MEDIA BOX (KHUNG VÀNG) - LOGIC MỚI
    ========================================= */
 
-/* --- 1. CẤU HÌNH KHUNG VÀNG --- */
 .media-box {
-    /* Quan trọng: display table giúp khung co lại vừa khít nội dung, không bị dãn sang phải */
+    /* QUAN TRỌNG: display: table giúp khung vàng co lại vừa khít nội dung bên trong */
     display: table; 
-    margin: 20px auto; /* Căn giữa */
+    
+    /* Căn giữa khung vàng */
+    margin: 20px auto; 
     
     background-color: #FFF8E1; /* Nền vàng kem */
     border: 1px solid #E6D5B8;
     border-radius: 8px;
-    
-    /* Padding nhỏ để tạo viền vàng ôm lấy nội dung */
-    padding: 10px; 
+    padding: 10px; /* Khoảng cách từ viền vàng đến video/ảnh */
     
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    max-width: 100%;
+    
+    /* Đảm bảo không to hơn màn hình */
+    max-width: 100%; 
+    box-sizing: border-box;
 }
 
-/* --- 2. XỬ LÝ ẢNH --- */
+/* XỬ LÝ ẢNH TRONG KHUNG */
 .media-box img {
     display: block;
     max-width: 100%;
     height: auto;
-    /* Giới hạn chiều cao ảnh để không quá khổ trên PC */
-    max-height: 500px; 
     border-radius: 4px;
-    /* Bỏ box-shadow của ảnh để tránh tạo cảm giác "2 lớp nền" */
-    box-shadow: none; 
 }
 
-/* --- 3. XỬ LÝ VIDEO --- */
-.media-box .video-container {
-    position: relative;
-    background: #000;
-    border-radius: 4px;
-    overflow: hidden;
+/* XỬ LÝ IFRAME (VIDEO NHÚNG) TRONG KHUNG */
+.media-box iframe {
+    display: block;
+    /* Đảm bảo video responsive trên mobile */
+    max-width: 100%; 
     
-    /* Kích thước mặc định cho video ngang */
-    width: 100vw; /* Trên mobile sẽ full màn */
-    max-width: 800px; /* Giới hạn chiều rộng trên PC */
-    aspect-ratio: 16 / 9; /* Tỷ lệ chuẩn chữ nhật */
-}
-
-/* --- Class riêng cho Video Dọc (Shorts/Reels) --- */
-.media-box .video-container.vertical-video {
-    max-width: 350px; /* Video dọc thì bóp chiều ngang lại */
-    aspect-ratio: 9 / 16; /* Tỷ lệ chuẩn điện thoại */
-    margin: 0 auto; /* Căn giữa trong khung vàng */
-}
-
-/* Iframe bên trong */
-.media-box .video-container iframe {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    border: 0;
+    /* Border radius nhẹ cho đẹp */
+    border-radius: 4px;
+    border: none;
 }
 
 /* --- TEXT CONTENT --- */
@@ -174,13 +155,13 @@ body {
 }
 .btn-readmore:hover { background-color: #8B4513; color: #fff; }
 
-/* --- PAGINATION & FOOTER --- */
+/* --- PHÂN TRANG & FOOTER --- */
 .pagination { display: flex; justify-content: center; gap: 8px; padding: 30px 20px; border-top: 1px solid #eee; }
 .pagination a, .pagination span { padding: 8px 14px; border: 1px solid #E6D5B8; text-decoration: none; color: #8B4513; border-radius: 4px; background: #fff; font-weight: bold; font-size: 14px; transition: 0.2s; }
 .pagination a:hover { background: #FFF8E1; border-color: #D9A404; }
 .pagination .active { background: #8B4513; color: #fff; border-color: #8B4513; }
 
-.content-wrapper img, .content-wrapper iframe { max-width: 100% !important; margin: 10px auto !important; display: block; }
+.content-wrapper img { max-width: 100% !important; margin: 10px auto !important; display: block; }
 .content-wrapper a { color: #b35400; text-decoration: none; border-bottom: 1px dotted #b35400; font-weight: bold; word-break: break-all; }
 
 footer { text-align: center; padding: 20px; background-color: #FFFBBE; border-top: 1px solid #E6D5B8; margin-top: 20px; }
