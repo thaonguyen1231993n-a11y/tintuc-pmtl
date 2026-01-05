@@ -1,11 +1,19 @@
 /* --- CẤU HÌNH CHUNG --- */
-body {
+html, body {
     font-family: 'Noto Serif', 'Times New Roman', serif;
     background-color: #FDFCF8;
-    margin: 0;
-    padding: 10px;
     color: #4A3B32;
-    overflow-x: hidden;
+    margin: 0;
+    
+    /* QUAN TRỌNG: Ép buộc trình duyệt cho phép cuộn */
+    height: auto !important;       /* Chiều cao tự động dãn theo nội dung */
+    overflow-y: auto !important;   /* Luôn hiện thanh cuộn dọc */
+    overflow-x: hidden;            /* Ẩn thanh cuộn ngang */
+    -webkit-overflow-scrolling: touch; /* Giúp cuộn mượt hơn trên iPhone */
+}
+
+body {
+    padding: 10px; /* Giữ khoảng cách lề trên điện thoại */
 }
 
 .container {
@@ -126,3 +134,4 @@ body {
 .content-wrapper a { color: #b35400; text-decoration: none; border-bottom: 1px dotted #b35400; font-weight: bold; word-break: break-all; }
 footer { text-align: center; padding: 20px; background-color: #FFFBBE; border-top: 1px solid #E6D5B8; margin-top: 20px; }
 footer a { color: #8B4513; text-decoration: none; font-size: 13px; }
+
