@@ -7,9 +7,6 @@
     <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <script async src="https://www.tiktok.com/embed.js"></script>
-    <div id="fb-root"></div>
-    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/vi_VN/sdk.js#xfbml=1&version=v18.0"></script>
 </head>
 <body>
 
@@ -35,7 +32,7 @@
     try {
         $pdo = getDB();
         
-        // ĐẾM & TRUY VẤN (Giữ nguyên logic của bạn)
+        // ĐẾM TỔNG BÀI
         $sqlCount = "SELECT COUNT(*) FROM posts";
         if (!empty($filter_date)) $sqlCount .= " WHERE DATE(created_at) = :fdate";
         $stmtCount = $pdo->prepare($sqlCount);
@@ -44,6 +41,7 @@
         $total_records = $stmtCount->fetchColumn();
         $total_pages = ceil($total_records / $limit);
 
+        // LẤY DỮ LIỆU
         $sql = "SELECT * FROM posts";
         if (!empty($filter_date)) $sql .= " WHERE DATE(created_at) = :fdate";
         $sql .= " ORDER BY id DESC LIMIT :limit OFFSET :offset";
@@ -68,92 +66,55 @@
 
     <div class="news-list">
         <?php
-        function displayContent($content) {
-            if (empty($content)) return "";
-
-            // 1. YOUTUBE
-            $content = preg_replace_callback(
-                '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})([^\s<]*)/', 
-                function($matches) {
-                    $id = $matches[1];
-                    $fullLink = $matches[0];
-                    // Nếu là shorts -> thêm class vertical-video
-                    $class = (strpos($fullLink, 'shorts') !== false) ? 'vertical-video' : '';
-                    
-                    return '<div class="video-container '.$class.'">
-                                <iframe src="https://www.youtube.com/embed/'.$id.'" allowfullscreen></iframe>
-                            </div>';
-                }, 
-                $content
-            );
-
-            // 2. FACEBOOK (Quay lại dùng Iframe cho chắc chắn)
-            $content = preg_replace_callback(
-                '/(https?:\/\/(?:www\.|web\.|m\.)?facebook\.com\/(?:watch\/\?v=\d+|[a-zA-Z0-9.]+\/videos\/\d+|reel\/|share\/v\/)[^\s<]*)/',
-                function($matches) {
-                    $videoUrl = $matches[1];
-                    $encodedUrl = urlencode($videoUrl);
-                    // Nếu là reel -> thêm class vertical-video
-                    $class = (strpos($videoUrl, 'reel') !== false) ? 'vertical-video' : '';
-
-                    return '<div class="video-container '.$class.'">
-                                <iframe src="https://www.facebook.com/plugins/video.php?href=' . $encodedUrl . '&show_text=false&t=0" 
-                                        scrolling="no" frameborder="0" allowfullscreen="true" 
-                                        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
-                                </iframe>
-                            </div>';
-                },
-                $content
-            );
-
-            // Các thành phần khác
-            $content = preg_replace_callback('/<(blockquote|iframe|script|div)([^>]*)>/s', function ($matches) {
-                return '<' . $matches[1] . str_replace(["\n", "\r"], " ", $matches[2]) . '>';
-            }, $content);
-            $content = preg_replace(
-                '/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', 
-                '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', 
-                $content
-            );
-
-            return nl2br($content);
-        }
-
         if ($stmt->rowCount() > 0) {
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $title = $row['title'];
+                // Lấy nội dung gốc từ DB
                 $raw_content = $row['content'];
                 $date = date("d/m/Y H:i", strtotime($row['created_at']));
 
-                $processed_content = displayContent($raw_content);
                 $featured_media = "";
-                $final_content = $processed_content;
+                $final_content = $raw_content;
 
-                // Tách Video hoặc Ảnh để đưa lên Media Box
-                // Chỉ tìm div class="video-container" hoặc thẻ img
-                if (preg_match('/(<div class="video-container.*?<\/div>)/s', $processed_content, $matches)) {
+                // --- LOGIC TÁCH MEDIA MỚI ---
+                // 1. Tìm thẻ IFRAME (Mã nhúng Youtube/Facebook)
+                // Regex này tìm thẻ <iframe>...</iframe> bất kỳ
+                if (preg_match('/(<iframe.*?>.*?<\/iframe>)/is', $raw_content, $matches)) {
                     $featured_media = $matches[1];
-                    $final_content = str_replace($featured_media, "", $processed_content);
+                    // Xóa iframe khỏi nội dung văn bản dưới
+                    $final_content = str_replace($featured_media, "", $raw_content);
                 } 
-                elseif (preg_match('/(<img[^>]+>)/i', $processed_content, $matches)) {
+                // 2. Nếu không có Iframe, tìm thẻ IMG
+                elseif (preg_match('/(<img[^>]+>)/i', $raw_content, $matches)) {
                     $featured_media = $matches[1];
-                    $final_content = str_replace($featured_media, "", $processed_content);
+                    $final_content = str_replace($featured_media, "", $raw_content);
                 }
+
+                // Xử lý link text thành thẻ a (cho phần văn bản còn lại)
+                $final_content = preg_replace(
+                    '/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', 
+                    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', 
+                    $final_content
+                );
+                
+                // Chuyển xuống dòng thành <br>
+                $final_content = nl2br($final_content);
 
                 echo '<div class="news-item">';
                 echo '<span class="date">' . $date . '</span>';
                 echo '<h3 class="title">' . htmlspecialchars($title) . '</h3>';
 
-                // KHUNG VÀNG (MEDIA BOX)
+                // HIỂN THỊ MEDIA BOX (KHUNG VÀNG)
                 if (!empty($featured_media)) {
                     echo '<div class="media-box">';
-                    echo $featured_media;
+                    echo $featured_media; // Hiển thị nguyên gốc mã nhúng
                     echo '</div>';
                 }
 
                 echo '<div class="content-wrapper content-collapsed">';
                 echo $final_content; 
                 echo '</div>';
+                
                 echo '<button class="btn-readmore" onclick="toggleContent(this)">Xem thêm ▼</button>';
                 echo '</div>';
             }
@@ -166,7 +127,6 @@
     <?php if ($total_pages > 1): ?>
     <div class="pagination">
         <?php
-            // Logic phân trang giữ nguyên
             if ($page > 1) {
                 echo '<a href="?page=1' . ($filter_date ? '&date='.$filter_date : '') . '">«</a>';
                 echo '<a href="?page=' . ($page - 1) . ($filter_date ? '&date='.$filter_date : '') . '">‹</a>';
