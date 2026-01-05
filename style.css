@@ -45,7 +45,7 @@ body {
     .header-content p { font-size: 15px; }
 }
 
-/* --- THANH LỌC NGÀY THÁNG --- */
+/* --- THANH LỌC --- */
 .filter-bar {
     background: #FFF8E1;
     padding: 15px 20px;
@@ -85,147 +85,75 @@ body {
 .news-item .date { font-size: 12px; background: #FFF8E1; color: #A67B5B; padding: 3px 8px; border-radius: 4px; display: inline-block; }
 
 /* =========================================
-   MEDIA BOX (XỬ LÝ ẢNH & VIDEO)
+   MEDIA BOX (XỬ LÝ ẢNH & VIDEO SDK)
    ========================================= */
 
-/* --- 1. GIAO DIỆN MOBILE (Mặc định) --- */
+/* --- Cấu hình chung cho khung chứa Media --- */
 .media-box {
-    margin: 15px 0 20px 0;
+    margin: 15px auto 20px auto;
     text-align: center;
-    width: 100%;
-    /* Mobile: Không nền, full chiều rộng */
-    background: transparent;
-    border: none;
-    padding: 0;
-    display: block;
-    position: relative; /* Để nút đổi tỷ lệ bám vào */
+    background-color: #FFF8E1; /* Nền vàng kem */
+    border: 1px solid #E6D5B8;
+    border-radius: 8px;
+    padding: 10px;
+    
+    /* display: flex giúp căn giữa mọi thứ bên trong */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    
+    /* Độ rộng linh hoạt */
+    width: fit-content; 
+    max-width: 100%; 
+    min-height: 100px; /* Chiều cao tối thiểu tránh bị xẹp khi đang load */
 }
 
+/* ẢNH */
 .media-box img {
-    width: 100%;
-    height: auto; 
-    border-radius: 8px;
-    object-fit: cover;
-    box-shadow: none;
-}
-
-.media-box .video-responsive {
-    width: 100%;
-    /* Mobile: Tỷ lệ mặc định */
-    aspect-ratio: 16 / 9;
+    display: block;
+    max-width: 100%;
     height: auto;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #000;
-    transition: aspect-ratio 0.4s ease; /* Hiệu ứng chuyển tỷ lệ mượt */
+    max-height: 560px; /* Giới hạn chiều cao ảnh trên PC */
+    border-radius: 4px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.media-box .video-responsive iframe {
+/* VIDEO FACEBOOK (SDK sẽ render vào đây) */
+.media-box .fb-video {
+    /* Đảm bảo video FB không bị tràn khung trên mobile */
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 6px;
+}
+/* Fix lỗi hiển thị trắng của FB SDK khi chưa load xong */
+.media-box .fb-video span { 
+    max-width: 100% !important; 
+}
+.media-box .fb-video iframe { 
+    max-width: 100% !important; 
+    border-radius: 6px;
+}
+
+/* VIDEO YOUTUBE (Vẫn dùng iframe nên cần wrapper để responsive) */
+.media-box .youtube-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 800px; /* Giới hạn chiều rộng YouTube */
+    background: #000;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.media-box .youtube-wrapper iframe {
     width: 100%;
     height: 100%;
     border: 0;
+    display: block;
 }
 
-/* Nút đổi tỷ lệ (Ẩn trên mobile cho gọn, hoặc hiện tùy ý. Ở đây mình cho hiện nhưng nhỏ) */
-.btn-ratio-toggle {
-    display: none; /* Mặc định ẩn trên mobile */
-}
-
-/* --- 2. GIAO DIỆN PC / TABLET (Màn hình > 768px) --- */
-@media (min-width: 768px) {
-    .media-box {
-        background-color: #FFF8E1; /* Nền vàng kem */
-        border: 1px solid #E6D5B8;
-        border-radius: 8px;
-        padding: 15px;
-        
-        /* QUAN TRỌNG: display: table giúp khung co giãn ôm theo nội dung */
-        display: table;
-        width: auto;
-        margin: 20px auto; 
-        max-width: 100%;
-        position: relative;
-    }
-
-    /* ẢNH */
-    .media-box img {
-        display: block;
-        max-width: 100%;
-        height: auto;
-        max-height: 560px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    
-    /* VIDEO TRÊN PC */
-    .media-box .video-responsive {
-        background-color: #000; 
-        border-radius: 6px;
-        overflow: hidden; 
-        
-        /* Tự động theo nội dung */
-        width: 100%;        
-        min-width: 480px; /* Rộng tối thiểu để không bị bé quá */
-        max-width: 900px;
-        
-        /* Giới hạn chiều cao */
-        max-height: 75vh; 
-        
-        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-
-    /* Iframe bên trong */
-    .media-box .video-responsive iframe,
-    .content-wrapper .video-responsive iframe {
-        width: 100%;
-        height: 100%;
-        border: 0;
-        display: block;
-    }
-
-    /* --- NÚT ĐỔI TỶ LỆ (Chỉ hiện trên PC) --- */
-    .btn-ratio-toggle {
-        display: flex; /* Hiện lại trên PC */
-        position: absolute;
-        top: 15px;
-        right: -40px; /* Nằm bên phải khung vàng */
-        background: #D9A404;
-        color: #fff;
-        border: none;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 16px;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-        z-index: 10;
-        transition: 0.2s;
-    }
-    .btn-ratio-toggle:hover {
-        background: #8B4513;
-        transform: scale(1.1);
-    }
-    /* Tooltip hướng dẫn */
-    .btn-ratio-toggle::after {
-        content: "Đổi khung hình";
-        position: absolute;
-        right: 40px;
-        top: 6px;
-        background: #4A3B32;
-        color: #fff;
-        padding: 4px 8px;
-        font-size: 11px;
-        border-radius: 4px;
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: 0.2s;
-    }
-    .btn-ratio-toggle:hover::after { opacity: 1; }
-}
-
-/* --- XỬ LÝ NỘI DUNG VĂN BẢN (TEXT) --- */
+/* --- TEXT CONTENT --- */
 .content-wrapper {
     margin-top: 10px;
     font-size: 16px;
@@ -238,13 +166,10 @@ body {
     overflow: hidden;
 }
 
-.content-collapsed {
-    max-height: 280px;
-}
+.content-collapsed { max-height: 280px; }
 .content-collapsed::after {
     content: "";
-    position: absolute;
-    bottom: 0; left: 0; width: 100%; height: 80px;
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 80px;
     background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
     pointer-events: none;
 }
@@ -257,83 +182,24 @@ body {
 }
 .btn-readmore:hover { background-color: #8B4513; color: #fff; }
 
-/* --- PHÂN TRANG --- */
+/* --- PAGINATION --- */
 .pagination {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 30px 20px;
-    border-top: 1px solid #eee;
+    display: flex; justify-content: center; gap: 8px; padding: 30px 20px; border-top: 1px solid #eee;
 }
 .pagination a, .pagination span {
-    padding: 8px 14px;
-    border: 1px solid #E6D5B8;
-    text-decoration: none;
-    color: #8B4513;
-    border-radius: 4px;
-    background: #fff;
-    font-weight: bold;
-    font-size: 14px;
-    transition: 0.2s;
+    padding: 8px 14px; border: 1px solid #E6D5B8; text-decoration: none; color: #8B4513; border-radius: 4px; background: #fff; font-weight: bold; font-size: 14px; transition: 0.2s;
 }
 .pagination a:hover { background: #FFF8E1; border-color: #D9A404; }
-.pagination .active {
-    background: #8B4513;
-    color: #fff;
-    border-color: #8B4513;
-}
+.pagination .active { background: #8B4513; color: #fff; border-color: #8B4513; }
 
-/* --- VIDEO DỰ PHÒNG TRONG BÀI VIẾT (PC) --- */
-.content-wrapper .video-responsive {
-    position: relative; 
-    margin: 15px auto; 
-    border-radius: 8px; 
-    background: #000;
-    width: 100%;
-    max-width: 800px; /* Giới hạn chiều rộng video trong bài */
-    aspect-ratio: 16 / 9;
-}
-
-/* Các thành phần khác */
-.content-wrapper img {
-    max-width: 100% !important;
-    height: auto !important;
-    margin: 10px auto !important;
-    display: block;
-}
-.content-wrapper iframe, 
-.content-wrapper blockquote {
-    max-width: 100% !important;
-    box-sizing: border-box;
-    margin: 10px auto !important;
-    display: block;
-}
-.tiktok-embed { margin: 0 auto !important; width: 100% !important; min-width: auto !important; }
-.content-wrapper a {
-    color: #b35400; text-decoration: none; border-bottom: 1px dotted #b35400;
-    font-weight: bold; word-break: break-all;
-}
-.content-wrapper a:hover { color: #d35400; border-bottom: 1px solid #d35400; }
-
-/* --- FOOTER & ADMIN --- */
+/* --- OTHER --- */
+.content-wrapper img, .content-wrapper iframe { max-width: 100% !important; margin: 10px auto !important; display: block; }
+.content-wrapper a { color: #b35400; text-decoration: none; border-bottom: 1px dotted #b35400; font-weight: bold; word-break: break-all; }
 footer { text-align: center; padding: 20px; background-color: #FFFBBE; border-top: 1px solid #E6D5B8; margin-top: 20px; }
 footer a { color: #8B4513; text-decoration: none; font-size: 13px; }
 
-.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-.admin-header h2 { margin: 0; color: #8B4513; }
-.btn-secondary { font-size: 13px; color: #555; text-decoration: none; margin-right: 10px; }
-.btn-logout { font-size: 13px; color: red; text-decoration: none; }
-
-.form-group { margin-bottom: 15px; }
-label { display: block; margin-bottom: 5px; font-weight: bold; }
-input, textarea { width: 100%; padding: 10px; border: 1px solid #D7CCC8; box-sizing: border-box; border-radius: 4px; background: #FFFCF2; font-family: inherit;}
-button { background: #8B4513; color: #fff; padding: 10px 20px; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.3s; }
-
-.action-btn { font-size: 12px; padding: 4px 8px; border-radius: 3px; text-decoration: none; margin-left: 5px; display: inline-block; }
-.edit-btn { background: #FFF8E1; color: #8B4513; border: 1px solid #E6D5B8; }
-.del-btn { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
-
-.admin-list table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-.admin-list th { background-color: #FFF8E1; color: #5D4037; padding: 10px; text-align: left; border-bottom: 2px solid #E6D5B8; }
-.admin-list td { padding: 10px; border-bottom: 1px solid #eee; color: #3E2723; }
-.admin-list tr:hover { background-color: #fafafa; }
+/* Mobile optimization */
+@media (max-width: 767px) {
+    .media-box { width: 100%; padding: 5px; background: transparent; border: none; }
+    .media-box .fb-video { width: 100%; }
+}
