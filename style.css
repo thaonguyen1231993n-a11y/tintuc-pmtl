@@ -85,77 +85,69 @@ body {
 .news-item .date { font-size: 12px; background: #FFF8E1; color: #A67B5B; padding: 3px 8px; border-radius: 4px; display: inline-block; }
 
 /* =========================================
-   MEDIA BOX (XỬ LÝ ẢNH & VIDEO SDK)
+   MEDIA BOX (KHUNG VÀNG HIỂN THỊ ẢNH/VIDEO)
    ========================================= */
 
-/* --- Cấu hình chung cho khung chứa Media --- */
+/* --- 1. CẤU HÌNH KHUNG VÀNG --- */
 .media-box {
-    margin: 15px auto 20px auto;
-    text-align: center;
+    /* Quan trọng: display table giúp khung co lại vừa khít nội dung, không bị dãn sang phải */
+    display: table; 
+    margin: 20px auto; /* Căn giữa */
+    
     background-color: #FFF8E1; /* Nền vàng kem */
     border: 1px solid #E6D5B8;
     border-radius: 8px;
-    padding: 10px;
     
-    /* display: flex giúp căn giữa mọi thứ bên trong */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+    /* Padding nhỏ để tạo viền vàng ôm lấy nội dung */
+    padding: 10px; 
     
-    /* Độ rộng linh hoạt */
-    width: fit-content; 
-    max-width: 100%; 
-    min-height: 100px; /* Chiều cao tối thiểu tránh bị xẹp khi đang load */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    max-width: 100%;
 }
 
-/* ẢNH */
+/* --- 2. XỬ LÝ ẢNH --- */
 .media-box img {
     display: block;
     max-width: 100%;
     height: auto;
-    max-height: 560px; /* Giới hạn chiều cao ảnh trên PC */
+    /* Giới hạn chiều cao ảnh để không quá khổ trên PC */
+    max-height: 500px; 
     border-radius: 4px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    /* Bỏ box-shadow của ảnh để tránh tạo cảm giác "2 lớp nền" */
+    box-shadow: none; 
 }
 
-/* VIDEO FACEBOOK (SDK sẽ render vào đây) */
-.media-box .fb-video {
-    /* Đảm bảo video FB không bị tràn khung trên mobile */
-    max-width: 100%;
-    overflow: hidden;
-    border-radius: 6px;
-}
-/* Fix lỗi hiển thị trắng của FB SDK khi chưa load xong */
-.media-box .fb-video span { 
-    max-width: 100% !important; 
-}
-.media-box .fb-video iframe { 
-    max-width: 100% !important; 
-    border-radius: 6px;
-}
-
-/* VIDEO YOUTUBE (Vẫn dùng iframe nên cần wrapper để responsive) */
-.media-box .youtube-wrapper {
+/* --- 3. XỬ LÝ VIDEO --- */
+.media-box .video-container {
     position: relative;
-    width: 100%;
-    max-width: 800px; /* Giới hạn chiều rộng YouTube */
     background: #000;
-    border-radius: 6px;
+    border-radius: 4px;
     overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    
+    /* Kích thước mặc định cho video ngang */
+    width: 100vw; /* Trên mobile sẽ full màn */
+    max-width: 800px; /* Giới hạn chiều rộng trên PC */
+    aspect-ratio: 16 / 9; /* Tỷ lệ chuẩn chữ nhật */
 }
 
-.media-box .youtube-wrapper iframe {
-    width: 100%;
-    height: 100%;
+/* --- Class riêng cho Video Dọc (Shorts/Reels) --- */
+.media-box .video-container.vertical-video {
+    max-width: 350px; /* Video dọc thì bóp chiều ngang lại */
+    aspect-ratio: 9 / 16; /* Tỷ lệ chuẩn điện thoại */
+    margin: 0 auto; /* Căn giữa trong khung vàng */
+}
+
+/* Iframe bên trong */
+.media-box .video-container iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     border: 0;
-    display: block;
 }
 
 /* --- TEXT CONTENT --- */
 .content-wrapper {
-    margin-top: 10px;
+    margin-top: 15px;
     font-size: 16px;
     line-height: 1.6;
     color: #3E2723;
@@ -182,24 +174,14 @@ body {
 }
 .btn-readmore:hover { background-color: #8B4513; color: #fff; }
 
-/* --- PAGINATION --- */
-.pagination {
-    display: flex; justify-content: center; gap: 8px; padding: 30px 20px; border-top: 1px solid #eee;
-}
-.pagination a, .pagination span {
-    padding: 8px 14px; border: 1px solid #E6D5B8; text-decoration: none; color: #8B4513; border-radius: 4px; background: #fff; font-weight: bold; font-size: 14px; transition: 0.2s;
-}
+/* --- PAGINATION & FOOTER --- */
+.pagination { display: flex; justify-content: center; gap: 8px; padding: 30px 20px; border-top: 1px solid #eee; }
+.pagination a, .pagination span { padding: 8px 14px; border: 1px solid #E6D5B8; text-decoration: none; color: #8B4513; border-radius: 4px; background: #fff; font-weight: bold; font-size: 14px; transition: 0.2s; }
 .pagination a:hover { background: #FFF8E1; border-color: #D9A404; }
 .pagination .active { background: #8B4513; color: #fff; border-color: #8B4513; }
 
-/* --- OTHER --- */
 .content-wrapper img, .content-wrapper iframe { max-width: 100% !important; margin: 10px auto !important; display: block; }
 .content-wrapper a { color: #b35400; text-decoration: none; border-bottom: 1px dotted #b35400; font-weight: bold; word-break: break-all; }
+
 footer { text-align: center; padding: 20px; background-color: #FFFBBE; border-top: 1px solid #E6D5B8; margin-top: 20px; }
 footer a { color: #8B4513; text-decoration: none; font-size: 13px; }
-
-/* Mobile optimization */
-@media (max-width: 767px) {
-    .media-box { width: 100%; padding: 5px; background: transparent; border: none; }
-    .media-box .fb-video { width: 100%; }
-}
