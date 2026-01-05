@@ -82,41 +82,39 @@
 
     <div class="news-list">
         <?php
-        // Hàm xử lý hiển thị nội dung
+        // Hàm xử lý hiển thị nội dung - PHIÊN BẢN NÂNG CẤP SDK
         function displayContent($content) {
             if (empty($content)) return "";
 
-            // --- 1. XỬ LÝ YOUTUBE (Tự động nhận diện Shorts) ---
+            // --- 1. XỬ YOUTUBE (Giữ nguyên logic Shorts/Normal nhưng đổi class wrapper) ---
             $content = preg_replace_callback(
                 '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})([^\s<]*)/', 
                 function($matches) {
                     $id = $matches[1];
                     $fullLink = $matches[0];
-                    // Nếu link chứa "shorts", set tỷ lệ dọc (9/16), ngược lại là ngang (16/9)
+                    // Tự động nhận diện tỷ lệ cho YouTube
                     $ratio = (strpos($fullLink, 'shorts') !== false) ? '9/16' : '16/9';
                     
-                    return '<div class="video-responsive" style="aspect-ratio: '.$ratio.';">
+                    return '<div class="youtube-wrapper" style="aspect-ratio: '.$ratio.';">
                                 <iframe src="https://www.youtube.com/embed/'.$id.'" allowfullscreen></iframe>
                             </div>';
                 }, 
                 $content
             );
 
-            // --- 2. XỬ LÝ FACEBOOK (Tự động nhận diện Reel) ---
+            // --- 2. XỬ LÝ FACEBOOK (DÙNG SDK CHÍNH CHỦ) ---
+            // Thay vì dùng iframe, ta dùng thẻ div class="fb-video".
+            // Facebook SDK sẽ tự động tìm thẻ này và render video với kích thước chuẩn xác nhất.
             $content = preg_replace_callback(
                 '/(https?:\/\/(?:www\.|web\.|m\.)?facebook\.com\/(?:watch\/\?v=\d+|[a-zA-Z0-9.]+\/videos\/\d+|reel\/|share\/v\/)[^\s<]*)/',
                 function($matches) {
                     $videoUrl = $matches[1];
-                    $encodedUrl = urlencode($videoUrl);
-                    
-                    // Nếu link chứa "reel", set tỷ lệ dọc (9/16)
-                    $ratio = (strpos($videoUrl, 'reel') !== false) ? '9/16' : '16/9';
-
-                    return '<div class="video-responsive" style="aspect-ratio: '.$ratio.';">
-                                <iframe src="https://www.facebook.com/plugins/video.php?href=' . $encodedUrl . '&show_text=false&t=0" 
-                                        scrolling="no" frameborder="0" allowfullscreen="true" 
-                                        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
-                                </iframe>
+                    // data-width="auto" báo cho FB biết hãy tự co giãn theo khung chứa (.media-box)
+                    // data-show-text="false" để ẩn mô tả, chỉ hiện video cho gọn
+                    return '<div class="fb-video" 
+                                 data-href="'.$videoUrl.'" 
+                                 data-width="auto" 
+                                 data-show-text="false">
                             </div>';
                 },
                 $content
@@ -147,8 +145,9 @@
                 $featured_media = "";
                 $final_content = $processed_content;
 
-                // Tách Video hoặc Ảnh để đưa lên Media Box
-                if (preg_match('/(<div class="video-responsive".*?<\/div>)/s', $processed_content, $matches)) {
+                // Tách Video hoặc Ảnh đưa lên Media Box
+                // Ưu tiên tìm video Facebook (fb-video) hoặc YouTube (youtube-wrapper)
+                if (preg_match('/(<div class="(fb-video|youtube-wrapper)".*?<\/div>)/s', $processed_content, $matches)) {
                     $featured_media = $matches[1];
                     $final_content = str_replace($featured_media, "", $processed_content);
                 } 
@@ -228,7 +227,6 @@
         }
     }
 
-    // Tự động kiểm tra bài viết dài/ngắn khi tải trang
     window.addEventListener('load', function() {
         setTimeout(function() {
             var contents = document.querySelectorAll('.content-wrapper');
@@ -241,38 +239,12 @@
                     }
                 }
             });
-        }, 500); 
-
-        // --- TÍNH NĂNG MỚI: Thêm nút đổi tỷ lệ cho Video (Fix lỗi video bị cắt) ---
-        const videos = document.querySelectorAll('.media-box .video-responsive');
-        videos.forEach(function(videoDiv) {
-            // Tạo nút bấm
-            if (!videoDiv.parentNode.querySelector('.btn-ratio-toggle')) {
-                const btn = document.createElement('button');
-                btn.className = 'btn-ratio-toggle';
-                btn.innerHTML = '⛶'; // Icon khung hình
-                btn.title = 'Bấm để đổi tỷ lệ khung hình nếu bị cắt';
-                
-                // Sự kiện bấm nút: Xoay vòng các tỷ lệ
-                btn.onclick = function() {
-                    const ratios = ['16/9', '4/3', '1/1', '9/16'];
-                    let currentRatio = videoDiv.style.aspectRatio;
-                    
-                    // Nếu chưa có style inline (đang dùng mặc định CSS), lấy giá trị computed hoặc gán 16/9
-                    if (!currentRatio) currentRatio = '16/9';
-                    
-                    // Tìm vị trí hiện tại và chuyển sang cái tiếp theo
-                    let index = ratios.indexOf(currentRatio);
-                    if (index === -1) index = 0; // Nếu không tìm thấy, reset về đầu
-                    
-                    let nextIndex = (index + 1) % ratios.length;
-                    videoDiv.style.aspectRatio = ratios[nextIndex];
-                };
-                
-                // Gắn nút vào khung cha (.media-box)
-                videoDiv.parentNode.appendChild(btn);
+            
+            // Re-parse Facebook SDK để đảm bảo video load đúng khi dùng filter/ajax (phòng hờ)
+            if (window.FB) {
+                window.FB.XFBML.parse();
             }
-        });
+        }, 500); 
     });
 </script>
 
