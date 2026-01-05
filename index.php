@@ -86,7 +86,7 @@
         function displayContent($content) {
             if (empty($content)) return "";
 
-            // --- 1. XỬ LÝ YOUTUBE (Cập nhật nhận diện Shorts) ---
+            // --- 1. XỬ LÝ YOUTUBE (Tự động nhận diện Shorts) ---
             $content = preg_replace_callback(
                 '/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})([^\s<]*)/', 
                 function($matches) {
@@ -102,7 +102,7 @@
                 $content
             );
 
-            // --- 2. XỬ LÝ FACEBOOK (Cập nhật nhận diện Reel) ---
+            // --- 2. XỬ LÝ FACEBOOK (Tự động nhận diện Reel) ---
             $content = preg_replace_callback(
                 '/(https?:\/\/(?:www\.|web\.|m\.)?facebook\.com\/(?:watch\/\?v=\d+|[a-zA-Z0-9.]+\/videos\/\d+|reel\/|share\/v\/)[^\s<]*)/',
                 function($matches) {
@@ -147,7 +147,7 @@
                 $featured_media = "";
                 $final_content = $processed_content;
 
-                // Tách Video hoặc Ảnh
+                // Tách Video hoặc Ảnh để đưa lên Media Box
                 if (preg_match('/(<div class="video-responsive".*?<\/div>)/s', $processed_content, $matches)) {
                     $featured_media = $matches[1];
                     $final_content = str_replace($featured_media, "", $processed_content);
@@ -228,6 +228,7 @@
         }
     }
 
+    // Tự động kiểm tra bài viết dài/ngắn khi tải trang
     window.addEventListener('load', function() {
         setTimeout(function() {
             var contents = document.querySelectorAll('.content-wrapper');
@@ -241,6 +242,37 @@
                 }
             });
         }, 500); 
+
+        // --- TÍNH NĂNG MỚI: Thêm nút đổi tỷ lệ cho Video (Fix lỗi video bị cắt) ---
+        const videos = document.querySelectorAll('.media-box .video-responsive');
+        videos.forEach(function(videoDiv) {
+            // Tạo nút bấm
+            if (!videoDiv.parentNode.querySelector('.btn-ratio-toggle')) {
+                const btn = document.createElement('button');
+                btn.className = 'btn-ratio-toggle';
+                btn.innerHTML = '⛶'; // Icon khung hình
+                btn.title = 'Bấm để đổi tỷ lệ khung hình nếu bị cắt';
+                
+                // Sự kiện bấm nút: Xoay vòng các tỷ lệ
+                btn.onclick = function() {
+                    const ratios = ['16/9', '4/3', '1/1', '9/16'];
+                    let currentRatio = videoDiv.style.aspectRatio;
+                    
+                    // Nếu chưa có style inline (đang dùng mặc định CSS), lấy giá trị computed hoặc gán 16/9
+                    if (!currentRatio) currentRatio = '16/9';
+                    
+                    // Tìm vị trí hiện tại và chuyển sang cái tiếp theo
+                    let index = ratios.indexOf(currentRatio);
+                    if (index === -1) index = 0; // Nếu không tìm thấy, reset về đầu
+                    
+                    let nextIndex = (index + 1) % ratios.length;
+                    videoDiv.style.aspectRatio = ratios[nextIndex];
+                };
+                
+                // Gắn nút vào khung cha (.media-box)
+                videoDiv.parentNode.appendChild(btn);
+            }
+        });
     });
 </script>
 
