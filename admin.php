@@ -2,16 +2,33 @@
 session_start();
 require_once 'db.php';
 
-// --- HÀM UPLOAD ẢNH SUPABASE (GIỮ NGUYÊN) ---
+// --- HÀM UPLOAD ẢNH SUPABASE (ĐÃ SỬA LỖI) ---
 function uploadToSupabase($file) {
     $supabaseUrl = getenv('SUPABASE_URL');
     $supabaseKey = getenv('SUPABASE_KEY');
     $bucketName = 'uploads';
 
-    if (!$supabaseUrl || !$supabaseKey) return ["error" => "Chưa cấu hình Supabase."];
+    // 1. Kiểm tra cấu hình
+    if (!$supabaseUrl || !$supabaseKey) {
+        return ["error" => "Chưa cấu hình Supabase."];
+    }
 
+    // 2. [QUAN TRỌNG] Kiểm tra xem file có hợp lệ không trước khi đọc
+    if (!isset($file['tmp_name']) || empty($file['tmp_name'])) {
+        // Nếu không có file tạm, trả về lỗi nhẹ nhàng thay vì làm sập web (Fatal Error)
+        return ["error" => "Không tìm thấy file để upload."];
+    }
+    
+    // Kiểm tra mã lỗi upload của PHP
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        return ["error" => "Lỗi upload từ trình duyệt. Mã lỗi: " . $file['error']];
+    }
+
+    // 3. Tiến hành xử lý
     $fileName = time() . '_' . basename($file['name']);
     $apiUrl = $supabaseUrl . '/storage/v1/object/' . $bucketName . '/' . $fileName;
+    
+    // Chỉ đọc file khi chắc chắn file tồn tại
     $fileContent = file_get_contents($file['tmp_name']);
     
     $ch = curl_init($apiUrl);
@@ -29,7 +46,7 @@ function uploadToSupabase($file) {
     if ($httpCode == 200) {
         return ["success" => $supabaseUrl . '/storage/v1/object/public/' . $bucketName . '/' . $fileName];
     } else {
-        return ["error" => "Lỗi upload: " . $response];
+        return ["error" => "Lỗi upload ($httpCode): " . $response];
     }
 }
 
@@ -418,3 +435,4 @@ if (isset($_SESSION['loggedin'])) {
     <?php endif; ?>
 </body>
 </html>
+
