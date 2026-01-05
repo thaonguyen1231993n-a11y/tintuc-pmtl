@@ -2,33 +2,21 @@
 session_start();
 require_once 'db.php';
 
-// --- HÀM UPLOAD ẢNH SUPABASE (ĐÃ SỬA LỖI) ---
+// --- HÀM UPLOAD ẢNH SUPABASE ---
 function uploadToSupabase($file) {
     $supabaseUrl = getenv('SUPABASE_URL');
     $supabaseKey = getenv('SUPABASE_KEY');
     $bucketName = 'uploads';
 
-    // 1. Kiểm tra cấu hình
-    if (!$supabaseUrl || !$supabaseKey) {
-        return ["error" => "Chưa cấu hình Supabase."];
-    }
+    if (!$supabaseUrl || !$supabaseKey) return ["error" => "Chưa cấu hình Supabase."];
 
-    // 2. [QUAN TRỌNG] Kiểm tra xem file có hợp lệ không trước khi đọc
+    // Kiểm tra file hợp lệ
     if (!isset($file['tmp_name']) || empty($file['tmp_name'])) {
-        // Nếu không có file tạm, trả về lỗi nhẹ nhàng thay vì làm sập web (Fatal Error)
-        return ["error" => "Không tìm thấy file để upload."];
-    }
-    
-    // Kiểm tra mã lỗi upload của PHP
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        return ["error" => "Lỗi upload từ trình duyệt. Mã lỗi: " . $file['error']];
+        return ["error" => "File không hợp lệ hoặc chưa được chọn."];
     }
 
-    // 3. Tiến hành xử lý
     $fileName = time() . '_' . basename($file['name']);
     $apiUrl = $supabaseUrl . '/storage/v1/object/' . $bucketName . '/' . $fileName;
-    
-    // Chỉ đọc file khi chắc chắn file tồn tại
     $fileContent = file_get_contents($file['tmp_name']);
     
     $ch = curl_init($apiUrl);
@@ -46,20 +34,19 @@ function uploadToSupabase($file) {
     if ($httpCode == 200) {
         return ["success" => $supabaseUrl . '/storage/v1/object/public/' . $bucketName . '/' . $fileName];
     } else {
-        return ["error" => "Lỗi upload ($httpCode): " . $response];
+        return ["error" => "Lỗi upload: " . $response];
     }
 }
 
-// --- XỬ LÝ UPLOAD ẢNH QUA AJAX (MỚI) ---
-// Đoạn này giúp ảnh hiện ngay trong khung soạn thảo mà không cần load lại trang
+// --- XỬ LÝ UPLOAD ẢNH QUA AJAX ---
 if (isset($_FILES['ajax_image']) && isset($_SESSION['loggedin'])) {
     header('Content-Type: application/json');
     $res = uploadToSupabase($_FILES['ajax_image']);
     echo json_encode($res);
-    exit; // Dừng chạy script tại đây để trả về JSON
+    exit; 
 }
 
-// --- CẤU HÌNH LOGIN & DATABASE ---
+// --- CẤU HÌNH ---
 $message = "";
 try {
     $pdo = getDB();
@@ -85,7 +72,7 @@ if (isset($_POST['login'])) {
 }
 if (isset($_GET['logout'])) { session_destroy(); header("Location: admin.php"); exit; }
 
-// --- XỬ LÝ LƯU/XÓA BÀI VIẾT ---
+// --- XỬ LÝ LƯU/XÓA ---
 if (isset($_SESSION['loggedin'])) {
     if (isset($_GET['delete'])) {
         $stmt = $pdo->prepare("DELETE FROM posts WHERE id = :id");
@@ -98,7 +85,6 @@ if (isset($_SESSION['loggedin'])) {
         $content = $_POST['content']; 
         $edit_id = $_POST['edit_id'];
 
-        // Lưu vào DB
         if ($edit_id !== "") {
             $stmt = $pdo->prepare("UPDATE posts SET title = :title, content = :content WHERE id = :id");
             if ($stmt->execute([':title' => $title, ':content' => $content, ':id' => $edit_id])) {
@@ -114,7 +100,6 @@ if (isset($_SESSION['loggedin'])) {
     }
 }
 
-// Lấy dữ liệu sửa
 $editing_post = null; $edit_mode = false; $all_posts = [];
 if (isset($_SESSION['loggedin'])) {
     $all_posts = $pdo->query("SELECT * FROM posts ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
@@ -141,41 +126,29 @@ if (isset($_SESSION['loggedin'])) {
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
     <style>
-        /* Cấu hình Full màn hình, chống cuộn body */
         html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
-        
-        #app-layout {
-            display: flex; flex-direction: column; height: 100%;
-        }
+        #app-layout { display: flex; flex-direction: column; height: 100%; }
 
-        /* Vùng soạn thảo */
         .editor-container-wrap {
             flex-grow: 1; display: flex; flex-direction: column;
             background: white; border-radius: 8px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            overflow: hidden; margin-bottom: 60px; /* Chừa chỗ cho menu mobile */
+            overflow: hidden; margin-bottom: 60px; 
         }
         @media (min-width: 768px) { .editor-container-wrap { margin-bottom: 10px; } }
 
-        /* Toolbar */
         .ql-toolbar { 
             background: #f9fafb; border-top: none !important; border-left: none !important; border-right: none !important;
             border-bottom: 1px solid #e5e7eb !important; display: flex; flex-wrap: wrap; align-items: center; padding: 8px !important;
         }
 
-        /* Editor Area */
         #editor-wrapper { flex-grow: 1; overflow-y: auto; position: relative; }
         .ql-container { border: none !important; font-size: 16px; height: 100%; }
-        /* Ảnh trong editor hiển thị vừa phải */
         .ql-editor img { max-width: 100%; height: auto; border-radius: 4px; display: block; margin: 10px auto; }
-        /* Video iframe trong editor */
         .ql-editor iframe { max-width: 100%; margin: 10px auto; display: block; }
 
-        /* Buttons */
         .custom-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 4px; color: #4b5563; transition: all 0.2s; cursor: pointer; }
         .custom-icon-btn:hover { background-color: #e5e7eb; color: #000; }
-        
-        /* Mobile Navbar */
         #mobile-nav-bar { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
@@ -201,6 +174,7 @@ if (isset($_SESSION['loggedin'])) {
     </div>
 
     <?php else: ?>
+    
     <div id="app-layout">
         <header class="bg-white border-b shadow-sm z-40 flex-shrink-0">
             <div class="max-w-6xl mx-auto px-4 py-2 flex justify-between items-center">
@@ -211,7 +185,6 @@ if (isset($_SESSION['loggedin'])) {
                         <button type="button" id="btn-header-save" class="text-xs bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700 font-bold shadow-sm">🚀 Đăng Bài</button>
                     </div>
                 </div>
-                
                 <div class="flex items-center gap-3">
                     <a href="index.php" target="_blank" class="text-xs text-gray-500 hover:underline hidden md:inline">Xem Web</a>
                     <a href="?logout=true" class="text-xs text-red-600 font-medium hover:underline">Thoát</a>
@@ -240,6 +213,12 @@ if (isset($_SESSION['loggedin'])) {
                         </span>
                         
                         <span class="ql-formats border-l pl-2 ml-2 flex items-center gap-1">
+                            <button type="button" id="btn-trigger-image-pc" class="custom-icon-btn" title="Chèn Ảnh">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                                </svg>
+                            </button>
+
                             <button type="button" id="btn-insert-video" class="custom-icon-btn" title="Chèn Video">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" /></svg>
                             </button>
@@ -253,9 +232,7 @@ if (isset($_SESSION['loggedin'])) {
                     </div>
 
                     <div id="editor-wrapper">
-                        <div id="editor">
-                            <?php echo $edit_mode ? $editing_post['content'] : ''; ?>
-                        </div>
+                        <div id="editor"><?php echo $edit_mode ? $editing_post['content'] : ''; ?></div>
                     </div>
                 </div>
 
@@ -266,8 +243,7 @@ if (isset($_SESSION['loggedin'])) {
 
         <div id="mobile-nav-bar" class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex items-center justify-around py-2 z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.1)]">
             <button id="btn-open-list-mobile" class="flex flex-col items-center text-gray-600 hover:text-blue-600 w-1/4">
-                <span class="text-xl">📂</span>
-                <span class="text-[10px] font-medium mt-1">Danh Sách</span>
+                <span class="text-xl">📂</span><span class="text-[10px] font-medium mt-1">Danh Sách</span>
             </button>
             <button id="btn-trigger-image-mobile" class="flex flex-col items-center text-gray-600 hover:text-blue-600 w-1/4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
@@ -319,17 +295,15 @@ if (isset($_SESSION['loggedin'])) {
     </div>
 
     <script>
-        // 1. SETUP QUILL
         var quill = new Quill('#editor', {
-            theme: 'snow',
-            modules: { toolbar: '#toolbar-container' },
-            placeholder: 'Nội dung bài viết...'
+            theme: 'snow', modules: { toolbar: '#toolbar-container' }, placeholder: 'Nội dung bài viết...'
         });
 
-        // 2. AJAX IMAGE UPLOAD (Sửa lỗi ảnh không hiện)
         const hiddenInput = document.getElementById('hidden-image-input');
-        // Nút trigger trên Mobile
+        // Kích hoạt input ảnh từ cả Mobile và PC
         document.getElementById('btn-trigger-image-mobile').onclick = () => hiddenInput.click();
+        const btnPc = document.getElementById('btn-trigger-image-pc');
+        if(btnPc) btnPc.onclick = () => hiddenInput.click();
         
         hiddenInput.onchange = async function() {
             if(this.files && this.files[0]) {
@@ -337,44 +311,27 @@ if (isset($_SESSION['loggedin'])) {
                 const formData = new FormData();
                 formData.append('ajax_image', file);
 
-                // Hiển thị trạng thái đang tải
                 const range = quill.getSelection(true);
                 const index = range ? range.index : quill.getLength();
                 quill.insertText(index, '⏳ Đang tải ảnh...', 'bold', true);
 
                 try {
-                    const response = await fetch('admin.php', {
-                        method: 'POST',
-                        body: formData
-                    });
+                    const response = await fetch('admin.php', { method: 'POST', body: formData });
                     const data = await response.json();
-
-                    // Xóa dòng 'Đang tải...'
                     quill.deleteText(index, 16); 
-
                     if (data.success) {
-                        // Chèn ảnh trực tiếp vào Editor
                         quill.insertEmbed(index, 'image', data.success);
-                    } else {
-                        alert('Lỗi upload: ' + data.error);
-                    }
-                } catch (e) {
-                    alert('Lỗi kết nối upload');
-                } finally {
-                    this.value = ''; // Reset input để chọn lại được
-                }
+                    } else { alert('Lỗi: ' + data.error); }
+                } catch (e) { alert('Lỗi kết nối'); } finally { this.value = ''; }
             }
         };
 
-        // 3. VIDEO EMBED (Hiện trình phát ngay trong editor)
         const videoModal = document.getElementById('modal-video-embed');
         const embedInput = document.getElementById('embed-code-input');
-        
         function toggleVideoModal() { 
             videoModal.classList.toggle('hidden'); 
             if(!videoModal.classList.contains('hidden')) embedInput.focus();
         }
-        
         document.getElementById('btn-insert-video').onclick = toggleVideoModal;
         document.querySelectorAll('.video-modal-close').forEach(b => b.onclick = toggleVideoModal);
 
@@ -383,38 +340,26 @@ if (isset($_SESSION['loggedin'])) {
             if(code.includes('<iframe')) {
                 const range = quill.getSelection(true);
                 const index = range ? range.index : quill.getLength();
-                
-                // Dùng phương thức này để chèn mã HTML an toàn (hiện video player luôn)
                 quill.clipboard.dangerouslyPasteHTML(index, code);
-                
-                toggleVideoModal();
-                embedInput.value = '';
-            } else {
-                alert("Vui lòng dán đúng mã <iframe>!");
-            }
+                toggleVideoModal(); embedInput.value = '';
+            } else { alert("Vui lòng dán đúng mã <iframe>!"); }
         };
 
-        // 4. SUBMIT FORM
         function submitPost() {
             var content = document.querySelector('input[name=content]');
             content.value = quill.root.innerHTML;
-            if(content.value.trim() === '<p><br></p>' || content.value.trim() === '') {
-                alert('Nội dung trống!'); return;
-            }
+            if(content.value.trim() === '<p><br></p>' || content.value.trim() === '') { alert('Nội dung trống!'); return; }
             document.getElementById('btn-real-submit').click();
         }
         document.getElementById('btn-header-save').onclick = submitPost;
         document.getElementById('btn-mobile-save').onclick = submitPost;
 
-        // 5. MODAL DANH SÁCH
         const listModal = document.getElementById('modal-post-list');
         function toggleList() { listModal.classList.toggle('hidden'); }
-        
         document.getElementById('btn-open-list-pc').onclick = toggleList;
         document.getElementById('btn-open-list-mobile').onclick = toggleList;
         document.querySelectorAll('.modal-close').forEach(b => b.onclick = toggleList);
 
-        // 6. TIỆN ÍCH
         document.getElementById('btn-paste').onclick = async () => {
             try {
                 const text = await navigator.clipboard.readText();
@@ -435,4 +380,3 @@ if (isset($_SESSION['loggedin'])) {
     <?php endif; ?>
 </body>
 </html>
-
