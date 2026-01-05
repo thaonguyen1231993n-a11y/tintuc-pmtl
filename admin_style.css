@@ -1,0 +1,56 @@
+/* --- BỔ SUNG CSS CHO TRÌNH SOẠN THẢO (QUILL) --- */
+
+/* Khung bao ngoài của editor */
+#editor-wrapper {
+    display: flex; 
+    flex-direction: column; 
+    background: white; 
+    border-radius: 0 0 8px 8px; 
+    border: 1px solid #d1d5db; 
+    border-top: 0;
+    min-height: 400px; /* Chiều cao tối thiểu */
+}
+
+/* Phần nội dung soạn thảo */
+.ql-container { 
+    flex-grow: 1; 
+    font-size: 16px; 
+    min-height: 300px; 
+    font-family: 'Inter', sans-serif;
+}
+
+/* Thanh công cụ (Toolbar) */
+.ql-toolbar { 
+    background: #f9fafb; 
+    border-radius: 8px 8px 0 0; 
+    border-color: #d1d5db !important; 
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* Các nút custom (Video, Paste, Clean) */
+.ql-custom-buttons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.ql-custom-buttons button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px !important;
+    height: 24px !important;
+    padding: 0 !important;
+}
+
+/* Vùng nhập liệu */
+.ql-editor { 
+    min-height: 300px; 
+}
+
+/* Responsive trên mobile */
+@media (max-width: 768px) {
+    .ql-toolbar { padding: 5px; }
+    #editor-wrapper { min-height: 300px; }
+}
