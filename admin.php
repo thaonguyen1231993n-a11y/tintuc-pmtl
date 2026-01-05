@@ -13,7 +13,6 @@ function uploadToSupabase($file) {
 
     if (!$supabaseUrl || !$supabaseKey) return ["error" => "Chưa cấu hình Supabase."];
 
-    // Kiểm tra kỹ file đầu vào
     if (!isset($file['tmp_name']) || empty($file['tmp_name'])) {
         return ["error" => "File không hợp lệ hoặc chưa được chọn."];
     }
@@ -147,7 +146,6 @@ if (isset($_SESSION['loggedin'])) {
 
         #editor-wrapper { flex-grow: 1; overflow-y: auto; position: relative; }
         .ql-container { border: none !important; font-size: 16px; height: 100%; }
-        /* Style cho nội dung bên trong Editor */
         .ql-editor img { max-width: 100%; height: auto; border-radius: 4px; display: block; margin: 10px auto; }
         .ql-editor iframe { max-width: 100%; margin: 10px auto; display: block; }
         .ql-editor a { color: #2563eb; text-decoration: underline; }
@@ -221,25 +219,20 @@ if (isset($_SESSION['loggedin'])) {
                             <button type="button" id="btn-trigger-image-pc" class="custom-icon-btn" title="Chèn Ảnh">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
                             </button>
-
                             <button type="button" id="btn-custom-link" class="custom-icon-btn" title="Chèn Liên Kết">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
                             </button>
-
                             <button type="button" id="btn-insert-video" class="custom-icon-btn" title="Chèn Video">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" /></svg>
                             </button>
-                            
-                            <button type="button" id="btn-paste" class="custom-icon-btn" title="Dán">
+                            <button type="button" id="btn-paste" class="custom-icon-btn" title="Dán (Plain Text)">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75" /></svg>
                             </button>
-                            
                             <button type="button" id="btn-clean-text" class="custom-icon-btn" title="Làm Sạch">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" /></svg>
                             </button>
                         </span>
                     </div>
-
                     <div id="editor-wrapper">
                         <div id="editor"><?php echo $edit_mode ? $editing_post['content'] : ''; ?></div>
                     </div>
@@ -308,18 +301,26 @@ if (isset($_SESSION['loggedin'])) {
             theme: 'snow', modules: { toolbar: '#toolbar-container' }, placeholder: 'Nội dung bài viết...'
         });
 
-        // 1. DÁN NHƯ NOTEPAD (PLAIN TEXT)
+        // --- SỬA LỖI KHÔNG DÁN ĐƯỢC VÀ CHỈ DÁN PLAIN TEXT ---
         quill.root.addEventListener('paste', function(e) {
-            e.preventDefault();
+            e.preventDefault(); // Chặn hành động dán mặc định (có HTML)
+            
+            // Lấy văn bản thuần (Plain Text)
             var text = (e.clipboardData || window.clipboardData).getData('text/plain');
-            var range = quill.getSelection();
-            if (range) {
-                quill.insertText(range.index, text);
-                quill.setSelection(range.index + text.length);
+            
+            if (text) {
+                // Ép lấy tiêu điểm (Focus) nếu bị mất
+                var range = quill.getSelection(true); 
+                var index = (range) ? range.index : quill.getLength(); // Nếu không có con trỏ, dán vào cuối
+                
+                // Chèn văn bản thuần
+                quill.insertText(index, text, 'user');
+                
+                // Đưa con trỏ ra sau văn bản vừa dán
+                quill.setSelection(index + text.length);
             }
         });
 
-        // 2. LINK
         document.getElementById('btn-custom-link').onclick = function() {
             var range = quill.getSelection(true);
             if (!range) return; 
@@ -337,7 +338,6 @@ if (isset($_SESSION['loggedin'])) {
             }
         };
 
-        // 3. ẢNH
         const hiddenInput = document.getElementById('hidden-image-input');
         document.getElementById('btn-trigger-image-mobile').onclick = () => hiddenInput.click();
         const btnPc = document.getElementById('btn-trigger-image-pc');
@@ -368,7 +368,6 @@ if (isset($_SESSION['loggedin'])) {
             }
         };
 
-        // 4. VIDEO
         const videoModal = document.getElementById('modal-video-embed');
         const embedInput = document.getElementById('embed-code-input');
         function toggleVideoModal() { 
@@ -388,7 +387,6 @@ if (isset($_SESSION['loggedin'])) {
             } else { alert("Vui lòng dán đúng mã <iframe>!"); }
         };
 
-        // 5. SUBMIT
         function submitPost() {
             var content = document.querySelector('input[name=content]');
             content.value = quill.root.innerHTML;
