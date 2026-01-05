@@ -145,7 +145,7 @@ if (isset($_SESSION['loggedin'])) {
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="admin_style.css">
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
     <style>
@@ -367,3 +367,4 @@ if (isset($_SESSION['loggedin'])) {
     <?php endif; ?>
 </body>
 </html>
+
