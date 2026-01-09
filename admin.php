@@ -5,38 +5,52 @@ date_default_timezone_set('Asia/Ho_Chi_Minh');
 
 require_once 'db.php';
 
-// --- HÀM UPLOAD ẢNH SUPABASE ---
 function uploadToSupabase($file) {
-    $supabaseUrl = getenv('SUPABASE_URL');
-    $supabaseKey = getenv('SUPABASE_KEY');
-    $bucketName = 'uploads';
+    // 1. Lấy Env và xử lý URL (tránh lỗi dư dấu / ở cuối)
+    $supabaseUrl = rtrim(getenv('SUPABASE_URL'), '/'); 
+    $supabaseKey = getenv('SUPABASE_KEY'); // BẮT BUỘC dùng Key service_role (Secret key)
+    $bucketName = 'uploads'; // Đảm bảo bucket này tồn tại trên Supabase
 
     if (!$supabaseUrl || !$supabaseKey) return ["error" => "Chưa cấu hình Supabase."];
 
+    // 2. Kiểm tra file đầu vào
     if (!isset($file['tmp_name']) || empty($file['tmp_name'])) {
-        return ["error" => "File không hợp lệ hoặc chưa được chọn."];
+        return ["error" => "File không hợp lệ."];
     }
 
-    $fileName = time() . '_' . basename($file['name']);
-    $apiUrl = $supabaseUrl . '/storage/v1/object/' . $bucketName . '/' . $fileName;
+    // 3. Xử lý tên file an toàn (Fix lỗi tên file có dấu cách hoặc tiếng Việt)
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $safeName = time() . '_' . bin2hex(random_bytes(8)) . '.' . $extension; 
+    
+    // URL API Upload
+    $apiUrl = $supabaseUrl . '/storage/v1/object/' . $bucketName . '/' . $safeName;
+
+    // 4. Đọc nội dung file
     $fileContent = file_get_contents($file['tmp_name']);
     
+    // 5. Cấu hình CURL
     $ch = curl_init($apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $fileContent);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Authorization: Bearer ' . $supabaseKey,
-        'Content-Type: ' . $file['type']
+        'Content-Type: ' . $file['type'],
+        'x-upsert: true' // Cho phép ghi đè nếu trùng tên (tùy chọn)
     ]);
+
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    if ($httpCode == 200) {
-        return ["success" => $supabaseUrl . '/storage/v1/object/public/' . $bucketName . '/' . $fileName];
+    // 6. Xử lý kết quả
+    if ($httpCode == 200 || $httpCode == 201) {
+        // Trả về link ảnh Public (Lưu ý: Bucket phải được set là Public)
+        $publicUrl = $supabaseUrl . '/storage/v1/object/public/' . $bucketName . '/' . $safeName;
+        return ["success" => $publicUrl];
     } else {
-        return ["error" => "Lỗi upload: " . $response];
+        // Trả về lỗi chi tiết để debug (quan trọng để biết tại sao 305 bytes)
+        return ["error" => "Lỗi Supabase ($httpCode): " . $response];
     }
 }
 
@@ -353,23 +367,37 @@ if (isset($_SESSION['loggedin'])) {
                 const file = this.files[0];
                 const formData = new FormData();
                 formData.append('ajax_image', file);
-
+        
                 const range = quill.getSelection(true);
                 const index = range ? range.index : quill.getLength();
-                quill.insertText(index, '⏳ Đang tải ảnh...', 'bold', true);
-
+                
+                // 1. Định nghĩa dòng chữ loading vào biến để tính độ dài chính xác
+                const loadingText = '⏳ Đang tải ảnh...'; 
+                
+                // Chèn dòng loading
+                quill.insertText(index, loadingText, 'bold', true);
+        
                 try {
                     const response = await fetch('admin.php', { method: 'POST', body: formData });
                     const data = await response.json();
-                    quill.deleteText(index, 16); 
+                    
+                    // 2. Xóa đúng độ dài của dòng loading (dù bạn sửa chữ gì nó cũng tự khớp)
+                    quill.deleteText(index, loadingText.length); 
+                    
                     if (data.success) {
                         quill.insertEmbed(index, 'image', data.success);
+                        // Thêm một dấu xuống dòng hoặc khoảng trắng sau ảnh để dễ viết tiếp (tuỳ chọn)
                         quill.setSelection(index + 1); 
-                    } else { alert('Lỗi: ' + data.error); }
+                    } else { 
+                        alert('Lỗi: ' + data.error); 
+                    }
                 } catch (e) { 
-                    quill.deleteText(index, 16);
+                    // Xóa đúng độ dài khi lỗi
+                    quill.deleteText(index, loadingText.length);
                     alert('Lỗi kết nối'); 
-                } finally { this.value = ''; }
+                } finally { 
+                    this.value = ''; 
+                }
             }
         };
 
@@ -430,3 +458,4 @@ if (isset($_SESSION['loggedin'])) {
     <?php endif; ?>
 </body>
 </html>
+
