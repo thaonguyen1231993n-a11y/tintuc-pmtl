@@ -1,5 +1,20 @@
 <?php
+// Cấu hình Session lưu trong 1 ngày (86400 giây) trước khi start
+$lifetime = 86400; 
+session_set_cookie_params([
+    'lifetime' => $lifetime,
+    'path' => '/',
+    'domain' => '', // Để trống hoặc điền domain của bạn
+    'secure' => false, // Đổi thành true nếu chạy HTTPS
+    'httponly' => true,
+    'samesite' => 'Strict'
+]);
 session_start();
+
+// Nếu session chưa có hạn dùng, gán lại (để gia hạn mỗi lần vào)
+if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
+    setcookie(session_name(), session_id(), time() + $lifetime, "/", "", false, true);
+}
 // --- 1. CẤU HÌNH MÚI GIỜ CHUẨN ---
 date_default_timezone_set('Asia/Ho_Chi_Minh'); 
 
@@ -182,6 +197,9 @@ if (isset($_SESSION['loggedin'])) {
     <?php if (!isset($_SESSION['loggedin'])): ?>
     <div class="min-h-screen flex items-center justify-center p-4 w-full overflow-y-auto">
         <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
+            <div class="flex justify-center mb-4">
+                <img src="logo.png" alt="Logo" class="h-20 w-auto object-contain">
+            </div>
             <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Đăng Nhập</h2>
             <form method="post" class="space-y-4">
                 <input type="text" name="username" required placeholder="Username" class="w-full px-4 py-2 border rounded-lg bg-gray-50">
@@ -458,4 +476,5 @@ if (isset($_SESSION['loggedin'])) {
     <?php endif; ?>
 </body>
 </html>
+
 
