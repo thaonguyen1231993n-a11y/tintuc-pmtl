@@ -21,51 +21,87 @@ date_default_timezone_set('Asia/Ho_Chi_Minh');
 require_once 'db.php';
 
 function uploadToSupabase($file) {
-    // 1. Lấy Env và xử lý URL (tránh lỗi dư dấu / ở cuối)
-    $supabaseUrl = rtrim(getenv('SUPABASE_URL'), '/'); 
-    $supabaseKey = getenv('SUPABASE_KEY'); // BẮT BUỘC dùng Key service_role (Secret key)
-    $bucketName = 'uploads'; // Đảm bảo bucket này tồn tại trên Supabase
+    $supabaseUrl = rtrim(getenv('SUPABASE_URL'), '/');
+    $supabaseKey = getenv('SUPABASE_KEY');
+    $bucketName = 'uploads';
 
     if (!$supabaseUrl || !$supabaseKey) return ["error" => "Chưa cấu hình Supabase."];
+    if (!isset($file['tmp_name']) || empty($file['tmp_name'])) return ["error" => "File không hợp lệ (Có thể do quá lớn)."];
 
-    // 2. Kiểm tra file đầu vào
-    if (!isset($file['tmp_name']) || empty($file['tmp_name'])) {
-        return ["error" => "File không hợp lệ."];
+    // --- BẮT ĐẦU XỬ LÝ NÉN ẢNH ---
+    $sourcePath = $file['tmp_name'];
+    $originalInfo = getimagesize($sourcePath);
+    $mime = $originalInfo['mime'];
+    
+    // Chỉ nén nếu là ảnh JPG, PNG, WEBP
+    if (in_array($mime, ['image/jpeg', 'image/png', 'image/webp'])) {
+        $quality = 70; // Chất lượng nén 70%
+        $maxWidth = 1200; // Chiều rộng tối đa (pixel)
+
+        // Tạo ảnh từ nguồn
+        switch ($mime) {
+            case 'image/jpeg': $image = imagecreatefromjpeg($sourcePath); break;
+            case 'image/png': $image = imagecreatefrompng($sourcePath); break;
+            case 'image/webp': $image = imagecreatefromwebp($sourcePath); break;
+        }
+
+        if (isset($image)) {
+            // Xử lý Resize nếu ảnh quá to
+            $width = imagesx($image);
+            $height = imagesy($image);
+            
+            if ($width > $maxWidth) {
+                $newWidth = $maxWidth;
+                $newHeight = floor($height * ($maxWidth / $width));
+                $image_p = imagecreatetruecolor($newWidth, $newHeight);
+                
+                // Giữ trong suốt cho PNG/WEBP
+                imagealphablending($image_p, false);
+                imagesavealpha($image_p, true);
+                
+                imagecopyresampled($image_p, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+                $image = $image_p;
+            }
+
+            // Ghi đè file tạm bằng file đã nén (Luôn chuyển về JPEG hoặc WebP để nhẹ nhất, ở đây mình giữ nguyên đuôi file nhưng nén)
+            // Lưu ý: Để đơn giản, ta xuất ra JPEG hoặc file gốc nén lại
+            if ($mime == 'image/png') {
+                // PNG nén mức 0-9 (9 là nén mạnh nhất)
+                imagepng($image, $sourcePath, 8); 
+            } else {
+                // JPEG/WEBP nén mức 0-100
+                imagejpeg($image, $sourcePath, $quality);
+            }
+            imagedestroy($image);
+        }
     }
+    // --- KẾT THÚC XỬ LÝ NÉN ---
 
-    // 3. Xử lý tên file an toàn (Fix lỗi tên file có dấu cách hoặc tiếng Việt)
+    // Các bước upload lên Supabase giữ nguyên như cũ
     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
     $safeName = time() . '_' . bin2hex(random_bytes(8)) . '.' . $extension; 
-    
-    // URL API Upload
     $apiUrl = $supabaseUrl . '/storage/v1/object/' . $bucketName . '/' . $safeName;
+    $fileContent = file_get_contents($sourcePath);
 
-    // 4. Đọc nội dung file
-    $fileContent = file_get_contents($file['tmp_name']);
-    
-    // 5. Cấu hình CURL
     $ch = curl_init($apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $fileContent);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Authorization: Bearer ' . $supabaseKey,
-        'Content-Type: ' . $file['type'],
-        'x-upsert: true' // Cho phép ghi đè nếu trùng tên (tùy chọn)
+        'Content-Type: ' . $mime, // Dùng mime chuẩn thay vì type gửi lên
+        'x-upsert: true'
     ]);
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    // 6. Xử lý kết quả
     if ($httpCode == 200 || $httpCode == 201) {
-        // Trả về link ảnh Public (Lưu ý: Bucket phải được set là Public)
         $publicUrl = $supabaseUrl . '/storage/v1/object/public/' . $bucketName . '/' . $safeName;
         return ["success" => $publicUrl];
     } else {
-        // Trả về lỗi chi tiết để debug (quan trọng để biết tại sao 305 bytes)
-        return ["error" => "Lỗi Supabase ($httpCode): " . $response];
+        return ["error" => "Lỗi Supabase ($httpCode)"];
     }
 }
 
@@ -476,5 +512,6 @@ if (isset($_SESSION['loggedin'])) {
     <?php endif; ?>
 </body>
 </html>
+
 
 
