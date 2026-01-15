@@ -1,15 +1,26 @@
 <?php
-// Cấu hình Session lưu trong 1 ngày (86400 giây) trước khi start
-$lifetime = 86400; 
+// --- CẤU HÌNH LƯU PHIÊN ĐĂNG NHẬP 30 NGÀY ---
+$lifetime = 2592000; // 30 ngày (tính bằng giây)
+
+// 1. Bắt buộc Server giữ file session lâu tương ứng (Quan trọng)
+ini_set('session.gc_maxlifetime', $lifetime);
+
+// 2. Cấu hình Cookie trình duyệt
 session_set_cookie_params([
     'lifetime' => $lifetime,
     'path' => '/',
-    'domain' => '', // Để trống hoặc điền domain của bạn
-    'secure' => false, // Đổi thành true nếu chạy HTTPS
+    'domain' => $_SERVER['HTTP_HOST'], // Tự động lấy domain hiện tại
+    'secure' => true,      // BẮT BUỘC TRUE vì bạn đang chạy HTTPS
     'httponly' => true,
-    'samesite' => 'Strict'
+    'samesite' => 'Lax'    // Đổi thành Lax để ổn định hơn khi mở lại trình duyệt so với Strict
 ]);
+
 session_start();
+
+// 3. Gia hạn Cookie mỗi khi người dùng vào lại trang (refresh thời gian sống)
+if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
+    setcookie(session_name(), session_id(), time() + $lifetime, "/", $_SERVER['HTTP_HOST'], true, true);
+}
 
 // Nếu session chưa có hạn dùng, gán lại (để gia hạn mỗi lần vào)
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
@@ -512,6 +523,7 @@ if (isset($_SESSION['loggedin'])) {
     <?php endif; ?>
 </body>
 </html>
+
 
 
 
