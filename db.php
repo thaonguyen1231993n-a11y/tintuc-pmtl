@@ -8,7 +8,7 @@ function getDB() {
     $port = getenv('DB_PORT'); 
 
     // Bắt buộc có sslmode=require
-    $dsn = "pgsql:host=$host;port=$port;dbname=$db;sslmode=require";
+    $dsn = "pgsql:host=$host;port=$port;dbname=$db";
     
     try {
         $options = [
@@ -27,3 +27,4 @@ function getDB() {
     }
 }
 ?>
+
