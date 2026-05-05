@@ -39,55 +39,6 @@ function uploadToSupabase($file) {
     if (!$supabaseUrl || !$supabaseKey) return ["error" => "Chưa cấu hình Supabase."];
     if (!isset($file['tmp_name']) || empty($file['tmp_name'])) return ["error" => "File không hợp lệ (Có thể do quá lớn)."];
 
-    // --- BẮT ĐẦU XỬ LÝ NÉN ẢNH ---
-    $sourcePath = $file['tmp_name'];
-    $originalInfo = getimagesize($sourcePath);
-    $mime = $originalInfo['mime'];
-    
-    // Chỉ nén nếu là ảnh JPG, PNG, WEBP
-    if (in_array($mime, ['image/jpeg', 'image/png', 'image/webp'])) {
-        $quality = 70; // Chất lượng nén 70%
-        $maxWidth = 1200; // Chiều rộng tối đa (pixel)
-
-        // Tạo ảnh từ nguồn
-        switch ($mime) {
-            case 'image/jpeg': $image = imagecreatefromjpeg($sourcePath); break;
-            case 'image/png': $image = imagecreatefrompng($sourcePath); break;
-            case 'image/webp': $image = imagecreatefromwebp($sourcePath); break;
-        }
-
-        if (isset($image)) {
-            // Xử lý Resize nếu ảnh quá to
-            $width = imagesx($image);
-            $height = imagesy($image);
-            
-            if ($width > $maxWidth) {
-                $newWidth = $maxWidth;
-                $newHeight = floor($height * ($maxWidth / $width));
-                $image_p = imagecreatetruecolor($newWidth, $newHeight);
-                
-                // Giữ trong suốt cho PNG/WEBP
-                imagealphablending($image_p, false);
-                imagesavealpha($image_p, true);
-                
-                imagecopyresampled($image_p, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-                $image = $image_p;
-            }
-
-            // Ghi đè file tạm bằng file đã nén (Luôn chuyển về JPEG hoặc WebP để nhẹ nhất, ở đây mình giữ nguyên đuôi file nhưng nén)
-            // Lưu ý: Để đơn giản, ta xuất ra JPEG hoặc file gốc nén lại
-            if ($mime == 'image/png') {
-                // PNG nén mức 0-9 (9 là nén mạnh nhất)
-                imagepng($image, $sourcePath, 8); 
-            } else {
-                // JPEG/WEBP nén mức 0-100
-                imagejpeg($image, $sourcePath, $quality);
-            }
-            imagedestroy($image);
-        }
-    }
-    // --- KẾT THÚC XỬ LÝ NÉN ---
-
     // Các bước upload lên Supabase giữ nguyên như cũ
     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
     $safeName = time() . '_' . bin2hex(random_bytes(8)) . '.' . $extension; 
@@ -421,48 +372,71 @@ if (isset($_SESSION['loggedin'])) {
             }
         };
 
-        // 3. ẢNH (AJAX)
+        // 3. ẢNH (AJAX) - ĐÃ TỐI ƯU NÉN BẰNG JAVASCRIPT
         const hiddenInput = document.getElementById('hidden-image-input');
         document.getElementById('btn-trigger-image-mobile').onclick = () => hiddenInput.click();
         const btnPc = document.getElementById('btn-trigger-image-pc');
         if(btnPc) btnPc.onclick = () => hiddenInput.click();
         
-        hiddenInput.onchange = async function() {
+        hiddenInput.onchange = function(e) {
             if(this.files && this.files[0]) {
                 const file = this.files[0];
-                const formData = new FormData();
-                formData.append('ajax_image', file);
-        
+                const max_width = 1200; // Chiều rộng tối đa
+                
+                // 1. Chèn chữ loading ngay lập tức để người dùng không phải chờ
                 const range = quill.getSelection(true);
                 const index = range ? range.index : quill.getLength();
-                
-                // 1. Định nghĩa dòng chữ loading vào biến để tính độ dài chính xác
-                const loadingText = '⏳ Đang tải ảnh...'; 
-                
-                // Chèn dòng loading
+                const loadingText = '⏳ Đang nén & tải ảnh...'; 
                 quill.insertText(index, loadingText, 'bold', true);
-        
-                try {
-                    const response = await fetch('admin.php', { method: 'POST', body: formData });
-                    const data = await response.json();
-                    
-                    // 2. Xóa đúng độ dài của dòng loading (dù bạn sửa chữ gì nó cũng tự khớp)
-                    quill.deleteText(index, loadingText.length); 
-                    
-                    if (data.success) {
-                        quill.insertEmbed(index, 'image', data.success);
-                        // Thêm một dấu xuống dòng hoặc khoảng trắng sau ảnh để dễ viết tiếp (tuỳ chọn)
-                        quill.setSelection(index + 1); 
-                    } else { 
-                        alert('Lỗi: ' + data.error); 
-                    }
-                } catch (e) { 
-                    // Xóa đúng độ dài khi lỗi
-                    quill.deleteText(index, loadingText.length);
-                    alert('Lỗi kết nối'); 
-                } finally { 
-                    this.value = ''; 
-                }
+
+                // 2. Nén ảnh bằng Canvas trên trình duyệt
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Tính toán tỷ lệ bóp nhỏ ảnh
+                        if (width > max_width) {
+                            height = Math.round((height * max_width) / width);
+                            width = max_width;
+                        }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Xuất ra file Blob siêu nhẹ (chất lượng 75%)
+                        canvas.toBlob(async function(blob) {
+                            const compressedFile = new File([blob], "image.jpg", { type: 'image/jpeg' });
+                            const formData = new FormData();
+                            formData.append('ajax_image', compressedFile);
+                            
+                            try {
+                                // Gửi file ĐÃ NÉN lên server
+                                const response = await fetch('admin.php', { method: 'POST', body: formData });
+                                const data = await response.json();
+                                
+                                quill.deleteText(index, loadingText.length); 
+                                
+                                if (data.success) {
+                                    quill.insertEmbed(index, 'image', data.success);
+                                    quill.setSelection(index + 1); 
+                                } else { 
+                                    alert('Lỗi: ' + data.error); 
+                                }
+                            } catch (err) { 
+                                quill.deleteText(index, loadingText.length);
+                                alert('Lỗi kết nối máy chủ'); 
+                            } finally { 
+                                hiddenInput.value = ''; 
+                            }
+                        }, 'image/jpeg', 0.75);
+                    };
+                };
             }
         };
 
