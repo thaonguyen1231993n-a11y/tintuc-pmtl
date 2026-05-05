@@ -39,8 +39,11 @@ function uploadToSupabase($file) {
     if (!$supabaseUrl || !$supabaseKey) return ["error" => "Chưa cấu hình Supabase."];
     if (!isset($file['tmp_name']) || empty($file['tmp_name'])) return ["error" => "File không hợp lệ (Có thể do quá lớn)."];
 
-    // Các bước upload lên Supabase giữ nguyên như cũ
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    // --- BỔ SUNG KHAI BÁO BIẾN BỊ THIẾU ---
+    $sourcePath = $file['tmp_name'];
+    $mime = 'image/jpeg';
+    $extension = 'jpg'; 
+
     $safeName = time() . '_' . bin2hex(random_bytes(8)) . '.' . $extension; 
     $apiUrl = $supabaseUrl . '/storage/v1/object/' . $bucketName . '/' . $safeName;
     $fileContent = file_get_contents($sourcePath);
@@ -51,7 +54,7 @@ function uploadToSupabase($file) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, $fileContent);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Authorization: Bearer ' . $supabaseKey,
-        'Content-Type: ' . $mime, // Dùng mime chuẩn thay vì type gửi lên
+        'Content-Type: ' . $mime, 
         'x-upsert: true'
     ]);
 
