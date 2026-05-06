@@ -2,8 +2,10 @@ FROM php:8.2-apache
 
 # --- 1. CÀI ĐẶT THƯ VIỆN HỆ THỐNG ---
 # Bổ sung: libfreetype, libjpeg, libpng, libwebp để xử lý ảnh
+# Bổ sung: postgresql-client để sử dụng lệnh pg_dump xuất Database
 RUN apt-get update && apt-get install -y \
     libpq-dev \
+    postgresql-client \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libpng-dev \
