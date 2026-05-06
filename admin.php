@@ -104,24 +104,56 @@ if (isset($_POST['login'])) {
 }
 if (isset($_GET['logout'])) { session_destroy(); header("Location: admin.php"); exit; }
 
-// --- XỬ LÝ KHÔI PHỤC DATABASE ---
+// --- XỬ LÝ KHÔI PHỤC DATABASE (TỐI ƯU SIÊU TỐC QUA PSQL) ---
 if (isset($_POST['restore_db']) && isset($_SESSION['loggedin']) && isset($_FILES['backup_file'])) {
+    // Tạm thời tắt giới hạn thời gian thực thi của PHP
+    set_time_limit(0); 
+
     if ($_FILES['backup_file']['error'] === UPLOAD_ERR_OK) {
         $ext = strtolower(pathinfo($_FILES['backup_file']['name'], PATHINFO_EXTENSION));
         if ($ext === 'sql') {
-            $sqlContent = file_get_contents($_FILES['backup_file']['tmp_name']);
-            try {
-                // Chạy toàn bộ file SQL
-                $pdo->exec($sqlContent);
-                $message = "🎉 Khôi phục dữ liệu thành công!";
-            } catch (Exception $e) {
-                $message = "❌ Lỗi khôi phục (Xem lại file SQL): " . $e->getMessage();
+            $uploadedFilePath = $_FILES['backup_file']['tmp_name'];
+            
+            // Lấy thông tin DB từ môi trường
+            $host = getenv('DB_HOST');
+            $db   = getenv('DB_NAME');
+            $user = getenv('DB_USER');
+            $pass = getenv('DB_PASS');
+            $port = getenv('DB_PORT') ?: 5432;
+
+            // Truyền mật khẩu vào môi trường ngầm để psql sử dụng
+            putenv("PGPASSWORD=$pass");
+            
+            // Lệnh nạp trực tiếp file SQL bằng công cụ psql (Nhanh gấp 10 lần PDO)
+            // Cờ -q (quiet) để giảm bớt log không cần thiết
+            $command = "psql -h $host -p $port -U $user -d $db -f $uploadedFilePath -q 2>&1";
+            
+            $output = [];
+            $return_var = 0;
+            exec($command, $output, $return_var);
+            
+            if ($return_var === 0) {
+                $message = "🎉 Khôi phục dữ liệu siêu tốc thành công!";
+            } else {
+                $errorMsg = implode(" | ", array_slice($output, 0, 5)); // Lấy 5 dòng lỗi đầu tiên
+                $message = "❌ Lỗi khôi phục: " . htmlspecialchars($errorMsg);
             }
         } else {
             $message = "⚠️ Chỉ chấp nhận file có đuôi .sql!";
         }
     } else {
-        $message = "⚠️ Lỗi trong quá trình tải file!";
+        $uploadErrors = [
+            UPLOAD_ERR_INI_SIZE => 'File vượt quá cấu hình upload_max_filesize.',
+            UPLOAD_ERR_FORM_SIZE => 'File vượt quá MAX_FILE_SIZE của HTML form.',
+            UPLOAD_ERR_PARTIAL => 'File chỉ được tải lên một phần.',
+            UPLOAD_ERR_NO_FILE => 'Không có file nào được tải lên.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Thiếu thư mục tạm thời.',
+            UPLOAD_ERR_CANT_WRITE => 'Không thể ghi file vào ổ đĩa.',
+            UPLOAD_ERR_EXTENSION => 'Một PHP extension đã dừng việc upload.'
+        ];
+        $errCode = $_FILES['backup_file']['error'];
+        $errMsg = isset($uploadErrors[$errCode]) ? $uploadErrors[$errCode] : 'Lỗi không xác định.';
+        $message = "⚠️ Lỗi tải file: " . $errMsg;
     }
 }
 
