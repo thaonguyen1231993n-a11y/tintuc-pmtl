@@ -104,6 +104,53 @@ if (isset($_POST['login'])) {
 }
 if (isset($_GET['logout'])) { session_destroy(); header("Location: admin.php"); exit; }
 
+// --- XỬ LÝ KHÔI PHỤC DATABASE ---
+if (isset($_POST['restore_db']) && isset($_SESSION['loggedin']) && isset($_FILES['backup_file'])) {
+    if ($_FILES['backup_file']['error'] === UPLOAD_ERR_OK) {
+        $ext = strtolower(pathinfo($_FILES['backup_file']['name'], PATHINFO_EXTENSION));
+        if ($ext === 'sql') {
+            $sqlContent = file_get_contents($_FILES['backup_file']['tmp_name']);
+            try {
+                // Chạy toàn bộ file SQL
+                $pdo->exec($sqlContent);
+                $message = "🎉 Khôi phục dữ liệu thành công!";
+            } catch (Exception $e) {
+                $message = "❌ Lỗi khôi phục (Xem lại file SQL): " . $e->getMessage();
+            }
+        } else {
+            $message = "⚠️ Chỉ chấp nhận file có đuôi .sql!";
+        }
+    } else {
+        $message = "⚠️ Lỗi trong quá trình tải file!";
+    }
+}
+
+// --- XỬ LÝ TẢI BACKUP THỦ CÔNG ---
+if (isset($_GET['download_backup']) && isset($_SESSION['loggedin'])) {
+    $host = getenv('DB_HOST');
+    $db   = getenv('DB_NAME');
+    $user = getenv('DB_USER');
+    $pass = getenv('DB_PASS');
+    $port = getenv('DB_PORT') ?: 5432;
+
+    $date = date("Y-m-d_H-i");
+    $filename = "tintuc_manual_$date.sql";
+
+    // Ép trình duyệt tải file thay vì hiển thị
+    header('Content-Type: application/sql');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+    // Truyền mật khẩu vào môi trường ngầm để pg_dump sử dụng
+    putenv("PGPASSWORD=$pass");
+    
+    // Gọi lệnh pg_dump (có cờ --column-inserts để tương thích với nút Khôi phục)
+    $command = "pg_dump -h $host -p $port -U $user --column-inserts $db";
+    
+    // passthru sẽ thực thi lệnh và đẩy toàn bộ dữ liệu thẳng ra trình duyệt của bạn
+    passthru($command);
+    exit;
+}
+
 // --- XỬ LÝ LƯU/XÓA BÀI VIẾT ---
 if (isset($_SESSION['loggedin'])) {
     if (isset($_GET['delete'])) {
@@ -189,10 +236,10 @@ if (isset($_SESSION['loggedin'])) {
 <body class="text-gray-800">
 
     <?php if(!empty($message)): ?>
-    <div id="toast" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-[100]">
+    <div id="toast" class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg z-[100]">
         <?php echo $message; ?>
     </div>
-    <script>setTimeout(() => document.getElementById('toast').remove(), 3000);</script>
+    <script>setTimeout(() => document.getElementById('toast').remove(), 5000);</script>
     <?php endif; ?>
 
     <?php if (!isset($_SESSION['loggedin'])): ?>
@@ -218,6 +265,11 @@ if (isset($_SESSION['loggedin'])) {
                 <div class="flex items-center gap-3">
                     <a href="admin.php" class="text-lg font-bold text-gray-800">Admin</a>
                     <div class="hidden md:flex gap-2">
+                        <!-- NÚT TẢI BACKUP MỚI -->
+                        <a href="admin.php?download_backup=true" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 font-bold shadow-sm inline-block">Tải Backup</a>
+                        <!-- NÚT KHÔI PHỤC TRÊN PC -->
+                        <button type="button" id="btn-trigger-restore" class="text-xs bg-orange-500 text-white px-3 py-1.5 rounded hover:bg-orange-600 font-bold shadow-sm">Khôi Phục</button>
+                        
                         <button id="btn-open-list-pc" class="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-200 border">📂 Danh Sách</button>
                         <button type="button" id="btn-header-save" class="text-xs bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700 font-bold shadow-sm">🚀 Đăng Bài</button>
                     </div>
@@ -228,6 +280,12 @@ if (isset($_SESSION['loggedin'])) {
                 </div>
             </div>
         </header>
+
+        <!-- FORM ẨN ĐỂ UPLOAD FILE SQL -->
+        <form method="post" enctype="multipart/form-data" id="restoreForm" class="hidden">
+            <input type="file" name="backup_file" id="hidden-restore-input" accept=".sql">
+            <input type="hidden" name="restore_db" value="1">
+        </form>
 
         <div class="flex-grow flex flex-col max-w-4xl mx-auto w-full p-2 md:p-4 overflow-hidden relative">
             <form method="post" enctype="multipart/form-data" id="postForm" class="flex flex-col h-full">
@@ -307,6 +365,13 @@ if (isset($_SESSION['loggedin'])) {
                 <button class="modal-close text-2xl">&times;</button>
             </div>
             <div class="flex-grow overflow-y-auto p-2">
+                
+                <!-- NÚT KHÔI PHỤC & BACKUP TRÊN MOBILE -->
+                <div class="p-2 mb-2 border-b md:hidden text-center flex flex-col gap-2">
+                    <a href="admin.php?download_backup=true" class="w-full bg-green-100 text-green-700 py-2 rounded font-bold border border-green-300 block">Tải Backup (.sql)</a>
+                    <button type="button" id="btn-trigger-restore-mobile" class="w-full bg-orange-100 text-orange-700 py-2 rounded font-bold border border-orange-300">Khôi Phục Database (.sql)</button>
+                </div>
+
                 <?php if (empty($all_posts)): ?> <p class="text-center mt-4">Chưa có bài nào.</p> <?php else: ?>
                 <ul class="divide-y divide-gray-100">
                     <?php foreach ($all_posts as $post): ?>
@@ -342,6 +407,25 @@ if (isset($_SESSION['loggedin'])) {
         var quill = new Quill('#editor', {
             theme: 'snow', modules: { toolbar: '#toolbar-container' }, placeholder: 'Nội dung bài viết...'
         });
+
+        // --- 0. XỬ LÝ KHÔI PHỤC DATABASE ---
+        const restoreInput = document.getElementById('hidden-restore-input');
+        const triggerRestore = function() {
+            if(confirm('⚠️ CẢNH BÁO NGUY HIỂM: Hành động này sẽ nạp file SQL trực tiếp vào Database.\nBạn có chắc chắn muốn tiến hành khôi phục?')) {
+                restoreInput.click();
+            }
+        };
+        const btnRestorePc = document.getElementById('btn-trigger-restore');
+        const btnRestoreMobile = document.getElementById('btn-trigger-restore-mobile');
+        if(btnRestorePc) btnRestorePc.onclick = triggerRestore;
+        if(btnRestoreMobile) btnRestoreMobile.onclick = triggerRestore;
+
+        restoreInput.onchange = function() {
+            if(this.files && this.files[0]) {
+                // Submit form ngay lập tức khi chọn file xong
+                document.getElementById('restoreForm').submit();
+            }
+        };
 
         // --- 1. XỬ LÝ DÁN SIÊU SẠCH (PLAIN TEXT) ---
         quill.root.addEventListener('paste', function(e) {
@@ -500,7 +584,3 @@ if (isset($_SESSION['loggedin'])) {
     <?php endif; ?>
 </body>
 </html>
-
-
-
-
