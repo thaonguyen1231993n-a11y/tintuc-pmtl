@@ -410,11 +410,12 @@ if (isset($_SESSION['loggedin'])) {
 
         // --- 0. XỬ LÝ KHÔI PHỤC DATABASE ---
         const restoreInput = document.getElementById('hidden-restore-input');
+        
+        // Mở thẳng cửa sổ chọn file, không cảnh báo ở bước này để tránh bị trình duyệt chặn
         const triggerRestore = function() {
-            if(confirm('⚠️ CẢNH BÁO NGUY HIỂM: Hành động này sẽ nạp file SQL trực tiếp vào Database.\nBạn có chắc chắn muốn tiến hành khôi phục?')) {
-                restoreInput.click();
-            }
+            restoreInput.click();
         };
+        
         const btnRestorePc = document.getElementById('btn-trigger-restore');
         const btnRestoreMobile = document.getElementById('btn-trigger-restore-mobile');
         if(btnRestorePc) btnRestorePc.onclick = triggerRestore;
@@ -422,8 +423,15 @@ if (isset($_SESSION['loggedin'])) {
 
         restoreInput.onchange = function() {
             if(this.files && this.files[0]) {
-                // Submit form ngay lập tức khi chọn file xong
-                document.getElementById('restoreForm').submit();
+                // Hiện cảnh báo SAU khi đã chọn file
+                const fileName = this.files[0].name;
+                if(confirm('⚠️ CẢNH BÁO NGUY HIỂM: Hành động này sẽ nạp trực tiếp file SQL vào Database.\n\nFile bạn đang chọn: ' + fileName + '\n\nBạn có chắc chắn muốn tiến hành khôi phục?')) {
+                    // Nếu đồng ý, tự động nộp Form
+                    document.getElementById('restoreForm').submit();
+                } else {
+                    // Nếu bấm Hủy, làm sạch file vừa chọn
+                    this.value = ''; 
+                }
             }
         };
 
