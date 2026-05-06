@@ -5,7 +5,7 @@ $lifetime = 2592000; // 30 ngày (tính bằng giây)
 // 1. Bắt buộc Server giữ file session lâu tương ứng (Quan trọng)
 ini_set('session.gc_maxlifetime', $lifetime);
 
-// --- BỔ SUNG: KIỂM TRA ĐƯỜNG TRUYỀN (HTTP LAN hay HTTPS Internet) ---
+// --- KIỂM TRA ĐƯỜNG TRUYỀN (HTTP LAN hay HTTPS Internet) ---
 $is_secure = false;
 if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
     $is_secure = true;
@@ -17,18 +17,18 @@ if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
 session_set_cookie_params([
     'lifetime' => $lifetime,
     'path' => '/',
-    'domain' => $_SERVER['HTTP_HOST'], // Tự động lấy domain hiện tại
-    'secure' => $is_secure, // TỰ ĐỘNG BẬT/TẮT theo môi trường mạng
+    'domain' => '', // <--- QUAN TRỌNG: ĐỂ TRỐNG THAY VÌ DÙNG HTTP_HOST
+    'secure' => $is_secure,
     'httponly' => true,
-    'samesite' => 'Lax'    // Đổi thành Lax để ổn định hơn khi mở lại trình duyệt so với Strict
+    'samesite' => 'Lax'
 ]);
 
 session_start();
 
-// 3. Gia hạn Cookie mỗi khi người dùng vào lại trang (Đã gộp gọn và sửa lỗi xung đột)
+// 3. Gia hạn Cookie mỗi khi người dùng vào lại trang
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
-    // Tham số thứ 6 là cờ Secure (nhận $is_secure), thứ 7 là HttpOnly
-    setcookie(session_name(), session_id(), time() + $lifetime, "/", $_SERVER['HTTP_HOST'], $is_secure, true);
+    // <--- QUAN TRỌNG: Thay $_SERVER['HTTP_HOST'] bằng chuỗi rỗng ""
+    setcookie(session_name(), session_id(), time() + $lifetime, "/", "", $is_secure, true);
 }
 
 // --- 1. CẤU HÌNH MÚI GIỜ CHUẨN ---
