@@ -5,27 +5,32 @@ $lifetime = 2592000; // 30 ngày (tính bằng giây)
 // 1. Bắt buộc Server giữ file session lâu tương ứng (Quan trọng)
 ini_set('session.gc_maxlifetime', $lifetime);
 
+// --- BỔ SUNG: KIỂM TRA ĐƯỜNG TRUYỀN (HTTP LAN hay HTTPS Internet) ---
+$is_secure = false;
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    $is_secure = true;
+} elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+    $is_secure = true; // Nhận diện HTTPS từ Cloudflare Tunnel
+}
+
 // 2. Cấu hình Cookie trình duyệt
 session_set_cookie_params([
     'lifetime' => $lifetime,
     'path' => '/',
     'domain' => $_SERVER['HTTP_HOST'], // Tự động lấy domain hiện tại
-    'secure' => true,      // BẮT BUỘC TRUE vì bạn đang chạy HTTPS
+    'secure' => $is_secure, // TỰ ĐỘNG BẬT/TẮT theo môi trường mạng
     'httponly' => true,
     'samesite' => 'Lax'    // Đổi thành Lax để ổn định hơn khi mở lại trình duyệt so với Strict
 ]);
 
 session_start();
 
-// 3. Gia hạn Cookie mỗi khi người dùng vào lại trang (refresh thời gian sống)
+// 3. Gia hạn Cookie mỗi khi người dùng vào lại trang (Đã gộp gọn và sửa lỗi xung đột)
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
-    setcookie(session_name(), session_id(), time() + $lifetime, "/", $_SERVER['HTTP_HOST'], true, true);
+    // Tham số thứ 6 là cờ Secure (nhận $is_secure), thứ 7 là HttpOnly
+    setcookie(session_name(), session_id(), time() + $lifetime, "/", $_SERVER['HTTP_HOST'], $is_secure, true);
 }
 
-// Nếu session chưa có hạn dùng, gán lại (để gia hạn mỗi lần vào)
-if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
-    setcookie(session_name(), session_id(), time() + $lifetime, "/", "", false, true);
-}
 // --- 1. CẤU HÌNH MÚI GIỜ CHUẨN ---
 date_default_timezone_set('Asia/Ho_Chi_Minh'); 
 
