@@ -246,6 +246,9 @@ if (isset($_SESSION['loggedin'])) {
                 <input type="password" name="password" required placeholder="Password" class="w-full px-4 py-2 border rounded-lg bg-gray-50">
                 <button type="submit" name="login" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700">Vào Quản Trị</button>
             </form>
+            <a href="index.php" class="block w-full text-center mt-4 bg-gray-100 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-200 transition duration-150">
+                🏠 Quay về Trang Chủ
+            </a>
         </div>
     </div>
 
