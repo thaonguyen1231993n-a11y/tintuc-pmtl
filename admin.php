@@ -26,7 +26,7 @@ session_set_cookie_params([
 session_start();
 
 // --- XỬ LÝ UPLOAD ẢNH LOCAL ĐÃ TỐI ƯU ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['ajax_image'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['ajax_image']) && !isset($_POST['save_post']) && $_FILES['ajax_image']['error'] === UPLOAD_ERR_OK) {
     header('Content-Type: application/json');
     
     // Bảo mật: Chỉ người đã đăng nhập mới được upload
