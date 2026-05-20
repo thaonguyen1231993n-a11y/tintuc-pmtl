@@ -7,6 +7,31 @@
     <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        /* Ép buộc căn lề các đoạn văn bản */
+        .content-wrapper p {
+            margin-top: 0 !important;
+            margin-bottom: 6px !important; /* Khoảng cách siêu nhỏ giữa các dòng */
+            line-height: 1.4 !important;   /* Chiều cao chữ vừa phải */
+        }
+        
+        /* Tự động "tiêu diệt" các dòng trắng thừa do lỡ tay ấn Enter nhiều lần */
+        .content-wrapper p:has(> br:only-child),
+        .content-wrapper p:empty {
+            display: none !important;
+        }
+
+        /* Ép buộc căn lề nếu bạn dùng công cụ tạo Danh sách (Gạch đầu dòng) */
+        .content-wrapper ul, .content-wrapper ol {
+            margin-top: 0 !important;
+            margin-bottom: 6px !important;
+            padding-left: 20px !important;
+        }
+        .content-wrapper li {
+            margin-bottom: 4px !important;
+            line-height: 1.4 !important;
+        }
+    </style>
 </head>
 <body>
 
