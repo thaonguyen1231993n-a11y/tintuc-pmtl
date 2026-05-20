@@ -8,28 +8,31 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
-        /* Ép buộc căn lề các đoạn văn bản */
+        /* Tối ưu lại khoảng cách: Thở được, thoáng đãng nhưng không bị rỗng toác */
         .content-wrapper p {
             margin-top: 0 !important;
-            margin-bottom: 6px !important; /* Khoảng cách siêu nhỏ giữa các dòng */
-            line-height: 1.4 !important;   /* Chiều cao chữ vừa phải */
+            margin-bottom: 14px !important; /* Khoảng cách chuẩn giữa 2 đoạn văn */
+            line-height: 1.6 !important;    /* Chiều cao dòng chuẩn báo mạng giúp mắt không bị mỏi */
         }
         
-        /* Tự động "tiêu diệt" các dòng trắng thừa do lỡ tay ấn Enter nhiều lần */
+        /* Trả lại quyền xuống dòng cho bạn: 
+           Khi bạn cố tình ấn Enter để tạo 1 dòng trống, nó sẽ hiện ra 1 khoảng cách vừa phải */
         .content-wrapper p:has(> br:only-child),
         .content-wrapper p:empty {
-            display: none !important;
+            display: block !important;
+            height: 14px !important; 
+            margin-bottom: 0 !important; 
         }
 
-        /* Ép buộc căn lề nếu bạn dùng công cụ tạo Danh sách (Gạch đầu dòng) */
+        /* Danh sách (Gạch đầu dòng) */
         .content-wrapper ul, .content-wrapper ol {
             margin-top: 0 !important;
-            margin-bottom: 6px !important;
+            margin-bottom: 14px !important;
             padding-left: 20px !important;
         }
         .content-wrapper li {
-            margin-bottom: 4px !important;
-            line-height: 1.4 !important;
+            margin-bottom: 8px !important;
+            line-height: 1.6 !important;
         }
     </style>
 </head>
