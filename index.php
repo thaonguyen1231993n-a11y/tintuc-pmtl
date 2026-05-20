@@ -84,7 +84,7 @@
                 $final_content = preg_replace('/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', $final_content);
                 $final_content = nl2br($final_content);
 
-                echo '<div class="news-item">';
+                echo '<div id="post-' . $row['id'] . '" class="news-item">';
                 echo '<span class="date">' . $date . '</span>';
                 echo '<h3 class="title">' . htmlspecialchars($title) . '</h3>';
 
