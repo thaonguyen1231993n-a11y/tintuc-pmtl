@@ -417,6 +417,7 @@ if (isset($_SESSION['loggedin'])) {
                             <div class="flex justify-between text-xs">
                                 <span class="text-gray-400"><?php echo date("d/m H:i", strtotime($post['created_at'])); ?></span>
                                 <div class="flex gap-3">
+                                    <a href="index.php" target="_blank" class="text-emerald-600 font-bold">Xem</a>
                                     <a href="admin.php?edit=<?php echo $post['id']; ?>" class="text-blue-600 font-bold">Sửa</a>
                                     <a href="admin.php?delete=<?php echo $post['id']; ?>" onclick="return confirm('Xóa?')" class="text-red-600 font-bold">Xóa</a>
                                 </div>
