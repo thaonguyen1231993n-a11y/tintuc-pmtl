@@ -312,7 +312,9 @@ if (isset($_SESSION['loggedin'])) {
                         <button type="button" id="btn-trigger-restore" class="text-xs bg-orange-500 text-white px-3 py-1.5 rounded hover:bg-orange-600 font-bold shadow-sm">Khôi Phục</button>
                         <button type="button" class="btn-cleanup text-xs bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 font-bold shadow-sm">Dọn Rác</button>
                         <button id="btn-open-list-pc" class="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-200 border">QL Bài Đăng</button>
-                        <button type="button" id="btn-header-save" class="text-xs bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700 font-bold shadow-sm">🚀 Đăng Bài</button>
+                        <button type="button" id="btn-header-save" class="text-xs bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700 font-bold shadow-sm">
+                            <?php echo $edit_mode ? '💾 Cập Nhật' : '🚀 Đăng Bài'; ?>
+                        </button>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -330,10 +332,18 @@ if (isset($_SESSION['loggedin'])) {
         <div class="flex-grow flex flex-col max-w-4xl mx-auto w-full p-2 md:p-4 overflow-hidden relative">
             <form method="post" enctype="multipart/form-data" id="postForm" class="flex flex-col h-full">
                 <input type="hidden" name="edit_id" value="<?php echo $edit_mode ? $editing_post['id'] : ''; ?>">
-                <input type="text" name="title" required placeholder="Tiêu đề bài viết..." 
-                       value="<?php echo $edit_mode ? htmlspecialchars($editing_post['title']) : ''; ?>"
-                       onkeydown="if(event.key === 'Enter') { event.preventDefault(); return false; }"
-                       class="flex-shrink-0 w-full text-xl md:text-2xl font-bold border-none focus:ring-0 p-2 bg-transparent placeholder-gray-400 outline-none mb-2">
+                <div class="flex items-center gap-2 mb-2">
+                    <input type="text" name="title" required placeholder="Tiêu đề bài viết..." 
+                           value="<?php echo $edit_mode ? htmlspecialchars($editing_post['title']) : ''; ?>"
+                           onkeydown="if(event.key === 'Enter') { event.preventDefault(); return false; }"
+                           class="flex-grow w-full text-xl md:text-2xl font-bold border-none focus:ring-0 p-2 bg-transparent placeholder-gray-400 outline-none">
+                           
+                    <?php if ($edit_mode): ?>
+                        <a href="admin.php" class="flex-shrink-0 text-sm bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-300 font-bold border shadow-sm transition-colors">
+                            ❌ Hủy sửa
+                        </a>
+                    <?php endif; ?>
+                </div>
                 <input type="file" name="ajax_image" id="hidden-image-input" accept="image/*" class="hidden">
                 <div class="editor-container-wrap">
                     <div id="toolbar-container">
@@ -391,7 +401,7 @@ if (isset($_SESSION['loggedin'])) {
 
             <button id="btn-mobile-save" class="flex flex-col items-center text-blue-600 w-1/4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" /></svg>
-                <span class="text-[10px] font-bold mt-1">Đăng Bài</span>
+                <span class="text-[10px] font-bold mt-1"><?php echo $edit_mode ? 'Cập Nhật' : 'Đăng Bài'; ?></span>
             </button>
         </div>
     </div>
