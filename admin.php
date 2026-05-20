@@ -17,7 +17,7 @@ if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
 session_set_cookie_params([
     'lifetime' => $lifetime,
     'path' => '/',
-    'domain' => '', // <--- QUAN TRỌNG: ĐỂ TRỐNG THAY VÌ DÙNG HTTP_HOST
+    'domain' => '', 
     'secure' => $is_secure,
     'httponly' => true,
     'samesite' => 'Lax'
@@ -25,65 +25,46 @@ session_set_cookie_params([
 
 session_start();
 
+// --- XỬ LÝ UPLOAD ẢNH LOCAL ĐÃ TỐI ƯU ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['ajax_image'])) {
+    header('Content-Type: application/json');
+    
+    // Bảo mật: Chỉ người đã đăng nhập mới được upload
+    if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+        echo json_encode(['success' => false, 'error' => 'Từ chối truy cập']);
+        exit;
+    }
+
+    $target_dir = __DIR__ . "/uploads/";
+    if (!file_exists($target_dir)) {
+        mkdir($target_dir, 0755, true);
+    }
+
+    $file_extension = strtolower(pathinfo($_FILES["ajax_image"]["name"], PATHINFO_EXTENSION));
+    // Tạo tên file ngẫu nhiên siêu an toàn
+    $new_file_name = uniqid() . '_' . bin2hex(random_bytes(2)) . '.' . $file_extension;
+    $target_file = $target_dir . $new_file_name;
+
+    $allowed_types = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    
+    if (in_array($file_extension, $allowed_types) && move_uploaded_file($_FILES["ajax_image"]["tmp_name"], $target_file)) {
+        // Trả về đúng link local /uploads/...
+        echo json_encode(['success' => true, 'url' => '/uploads/' . $new_file_name]);
+    } else {
+        echo json_encode(['success' => false, 'error' => 'Lỗi lưu file, vui lòng kiểm tra quyền thư mục']);
+    }
+    exit;
+}
+
 // 3. Gia hạn Cookie mỗi khi người dùng vào lại trang
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
-    // <--- QUAN TRỌNG: Thay $_SERVER['HTTP_HOST'] bằng chuỗi rỗng ""
     setcookie(session_name(), session_id(), time() + $lifetime, "/", "", $is_secure, true);
 }
 
-// --- 1. CẤU HÌNH MÚI GIỜ CHUẨN ---
+// --- CẤU HÌNH MÚI GIỜ & DB ---
 date_default_timezone_set('Asia/Ho_Chi_Minh'); 
-
 require_once 'db.php';
 
-function uploadToSupabase($file) {
-    $supabaseUrl = rtrim(getenv('SUPABASE_URL'), '/');
-    $supabaseKey = getenv('SUPABASE_KEY');
-    $bucketName = 'uploads';
-
-    if (!$supabaseUrl || !$supabaseKey) return ["error" => "Chưa cấu hình Supabase."];
-    if (!isset($file['tmp_name']) || empty($file['tmp_name'])) return ["error" => "File không hợp lệ (Có thể do quá lớn)."];
-
-    // --- BỔ SUNG KHAI BÁO BIẾN BỊ THIẾU ---
-    $sourcePath = $file['tmp_name'];
-    $mime = 'image/jpeg';
-    $extension = 'jpg'; 
-
-    $safeName = time() . '_' . bin2hex(random_bytes(8)) . '.' . $extension; 
-    $apiUrl = $supabaseUrl . '/storage/v1/object/' . $bucketName . '/' . $safeName;
-    $fileContent = file_get_contents($sourcePath);
-
-    $ch = curl_init($apiUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $fileContent);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . $supabaseKey,
-        'Content-Type: ' . $mime, 
-        'x-upsert: true'
-    ]);
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode == 200 || $httpCode == 201) {
-        $publicUrl = $supabaseUrl . '/storage/v1/object/public/' . $bucketName . '/' . $safeName;
-        return ["success" => $publicUrl];
-    } else {
-        return ["error" => "Lỗi Supabase ($httpCode)"];
-    }
-}
-
-// --- XỬ LÝ UPLOAD ẢNH QUA AJAX ---
-if (isset($_FILES['ajax_image']) && isset($_SESSION['loggedin']) && !isset($_POST['save_post'])) {
-    header('Content-Type: application/json');
-    $res = uploadToSupabase($_FILES['ajax_image']);
-    echo json_encode($res);
-    exit; 
-}
-
-// --- CẤU HÌNH DB & LOGIN ---
 $message = "";
 try {
     $pdo = getDB();
@@ -109,28 +90,20 @@ if (isset($_POST['login'])) {
 }
 if (isset($_GET['logout'])) { session_destroy(); header("Location: admin.php"); exit; }
 
-// --- XỬ LÝ KHÔI PHỤC DATABASE (TỐI ƯU SIÊU TỐC QUA PSQL) ---
+// --- XỬ LÝ KHÔI PHỤC DATABASE ---
 if (isset($_POST['restore_db']) && isset($_SESSION['loggedin']) && isset($_FILES['backup_file'])) {
-    // Tạm thời tắt giới hạn thời gian thực thi của PHP
     set_time_limit(0); 
-
     if ($_FILES['backup_file']['error'] === UPLOAD_ERR_OK) {
         $ext = strtolower(pathinfo($_FILES['backup_file']['name'], PATHINFO_EXTENSION));
         if ($ext === 'sql') {
             $uploadedFilePath = $_FILES['backup_file']['tmp_name'];
-            
-            // Lấy thông tin DB từ môi trường
             $host = getenv('DB_HOST');
             $db   = getenv('DB_NAME');
             $user = getenv('DB_USER');
             $pass = getenv('DB_PASS');
             $port = getenv('DB_PORT') ?: 5432;
 
-            // Truyền mật khẩu vào môi trường ngầm để psql sử dụng
             putenv("PGPASSWORD=$pass");
-            
-            // Lệnh nạp trực tiếp file SQL bằng công cụ psql (Nhanh gấp 10 lần PDO)
-            // Cờ -q (quiet) để giảm bớt log không cần thiết
             $command = "psql -h $host -p $port -U $user -d $db -f $uploadedFilePath -q 2>&1";
             
             $output = [];
@@ -140,25 +113,14 @@ if (isset($_POST['restore_db']) && isset($_SESSION['loggedin']) && isset($_FILES
             if ($return_var === 0) {
                 $message = "🎉 Khôi phục dữ liệu siêu tốc thành công!";
             } else {
-                $errorMsg = implode(" | ", array_slice($output, 0, 5)); // Lấy 5 dòng lỗi đầu tiên
+                $errorMsg = implode(" | ", array_slice($output, 0, 5));
                 $message = "❌ Lỗi khôi phục: " . htmlspecialchars($errorMsg);
             }
         } else {
             $message = "⚠️ Chỉ chấp nhận file có đuôi .sql!";
         }
     } else {
-        $uploadErrors = [
-            UPLOAD_ERR_INI_SIZE => 'File vượt quá cấu hình upload_max_filesize.',
-            UPLOAD_ERR_FORM_SIZE => 'File vượt quá MAX_FILE_SIZE của HTML form.',
-            UPLOAD_ERR_PARTIAL => 'File chỉ được tải lên một phần.',
-            UPLOAD_ERR_NO_FILE => 'Không có file nào được tải lên.',
-            UPLOAD_ERR_NO_TMP_DIR => 'Thiếu thư mục tạm thời.',
-            UPLOAD_ERR_CANT_WRITE => 'Không thể ghi file vào ổ đĩa.',
-            UPLOAD_ERR_EXTENSION => 'Một PHP extension đã dừng việc upload.'
-        ];
-        $errCode = $_FILES['backup_file']['error'];
-        $errMsg = isset($uploadErrors[$errCode]) ? $uploadErrors[$errCode] : 'Lỗi không xác định.';
-        $message = "⚠️ Lỗi tải file: " . $errMsg;
+        $message = "⚠️ Lỗi tải file: " . $_FILES['backup_file']['error'];
     }
 }
 
@@ -173,17 +135,10 @@ if (isset($_GET['download_backup']) && isset($_SESSION['loggedin'])) {
     $date = date("Y-m-d_H-i");
     $filename = "tintuc_manual_$date.sql";
 
-    // Ép trình duyệt tải file thay vì hiển thị
     header('Content-Type: application/sql');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
-
-    // Truyền mật khẩu vào môi trường ngầm để pg_dump sử dụng
     putenv("PGPASSWORD=$pass");
-    
-    // Gọi lệnh pg_dump (có cờ --column-inserts để tương thích với nút Khôi phục)
     $command = "pg_dump -h $host -p $port -U $user --column-inserts $db";
-    
-    // passthru sẽ thực thi lệnh và đẩy toàn bộ dữ liệu thẳng ra trình duyệt của bạn
     passthru($command);
     exit;
 }
@@ -302,11 +257,8 @@ if (isset($_SESSION['loggedin'])) {
                 <div class="flex items-center gap-3">
                     <a href="admin.php" class="text-lg font-bold text-gray-800">Admin</a>
                     <div class="hidden md:flex gap-2">
-                        <!-- NÚT TẢI BACKUP MỚI -->
                         <a href="admin.php?download_backup=true" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 font-bold shadow-sm inline-block">Tải Backup</a>
-                        <!-- NÚT KHÔI PHỤC TRÊN PC -->
                         <button type="button" id="btn-trigger-restore" class="text-xs bg-orange-500 text-white px-3 py-1.5 rounded hover:bg-orange-600 font-bold shadow-sm">Khôi Phục</button>
-                        
                         <button id="btn-open-list-pc" class="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-200 border">📂 Danh Sách</button>
                         <button type="button" id="btn-header-save" class="text-xs bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700 font-bold shadow-sm">🚀 Đăng Bài</button>
                     </div>
@@ -318,7 +270,6 @@ if (isset($_SESSION['loggedin'])) {
             </div>
         </header>
 
-        <!-- FORM ẨN ĐỂ UPLOAD FILE SQL -->
         <form method="post" enctype="multipart/form-data" id="restoreForm" class="hidden">
             <input type="file" name="backup_file" id="hidden-restore-input" accept=".sql">
             <input type="hidden" name="restore_db" value="1">
@@ -327,13 +278,11 @@ if (isset($_SESSION['loggedin'])) {
         <div class="flex-grow flex flex-col max-w-4xl mx-auto w-full p-2 md:p-4 overflow-hidden relative">
             <form method="post" enctype="multipart/form-data" id="postForm" class="flex flex-col h-full">
                 <input type="hidden" name="edit_id" value="<?php echo $edit_mode ? $editing_post['id'] : ''; ?>">
-                
                 <input type="text" name="title" required placeholder="Tiêu đề bài viết..." 
                        value="<?php echo $edit_mode ? htmlspecialchars($editing_post['title']) : ''; ?>"
+                       onkeydown="if(event.key === 'Enter') { event.preventDefault(); return false; }"
                        class="flex-shrink-0 w-full text-xl md:text-2xl font-bold border-none focus:ring-0 p-2 bg-transparent placeholder-gray-400 outline-none mb-2">
-                
                 <input type="file" name="ajax_image" id="hidden-image-input" accept="image/*" class="hidden">
-
                 <div class="editor-container-wrap">
                     <div id="toolbar-container">
                         <span class="ql-formats">
@@ -402,8 +351,6 @@ if (isset($_SESSION['loggedin'])) {
                 <button class="modal-close text-2xl">&times;</button>
             </div>
             <div class="flex-grow overflow-y-auto p-2">
-                
-                <!-- NÚT KHÔI PHỤC & BACKUP TRÊN MOBILE -->
                 <div class="p-2 mb-2 border-b md:hidden text-center flex flex-col gap-2">
                     <a href="admin.php?download_backup=true" class="w-full bg-green-100 text-green-700 py-2 rounded font-bold border border-green-300 block">Tải Backup (.sql)</a>
                     <button type="button" id="btn-trigger-restore-mobile" class="w-full bg-orange-100 text-orange-700 py-2 rounded font-bold border border-orange-300">Khôi Phục Database (.sql)</button>
@@ -445,14 +392,8 @@ if (isset($_SESSION['loggedin'])) {
             theme: 'snow', modules: { toolbar: '#toolbar-container' }, placeholder: 'Nội dung bài viết...'
         });
 
-        // --- 0. XỬ LÝ KHÔI PHỤC DATABASE ---
         const restoreInput = document.getElementById('hidden-restore-input');
-        
-        // Mở thẳng cửa sổ chọn file, không cảnh báo ở bước này để tránh bị trình duyệt chặn
-        const triggerRestore = function() {
-            restoreInput.click();
-        };
-        
+        const triggerRestore = function() { restoreInput.click(); };
         const btnRestorePc = document.getElementById('btn-trigger-restore');
         const btnRestoreMobile = document.getElementById('btn-trigger-restore-mobile');
         if(btnRestorePc) btnRestorePc.onclick = triggerRestore;
@@ -460,19 +401,15 @@ if (isset($_SESSION['loggedin'])) {
 
         restoreInput.onchange = function() {
             if(this.files && this.files[0]) {
-                // Hiện cảnh báo SAU khi đã chọn file
                 const fileName = this.files[0].name;
-                if(confirm('⚠️ CẢNH BÁO NGUY HIỂM: Hành động này sẽ nạp trực tiếp file SQL vào Database.\n\nFile bạn đang chọn: ' + fileName + '\n\nBạn có chắc chắn muốn tiến hành khôi phục?')) {
-                    // Nếu đồng ý, tự động nộp Form
+                if(confirm('⚠️ CẢNH BÁO: Bạn có chắc chắn muốn nạp file SQL: ' + fileName + ' ?')) {
                     document.getElementById('restoreForm').submit();
                 } else {
-                    // Nếu bấm Hủy, làm sạch file vừa chọn
                     this.value = ''; 
                 }
             }
         };
 
-        // --- 1. XỬ LÝ DÁN SIÊU SẠCH (PLAIN TEXT) ---
         quill.root.addEventListener('paste', function(e) {
             e.preventDefault(); 
             var text = (e.clipboardData || window.clipboardData).getData('text/plain');
@@ -486,7 +423,6 @@ if (isset($_SESSION['loggedin'])) {
             }
         });
 
-        // 2. LINK
         document.getElementById('btn-custom-link').onclick = function() {
             var range = quill.getSelection(true);
             if (!range) return; 
@@ -504,7 +440,7 @@ if (isset($_SESSION['loggedin'])) {
             }
         };
 
-        // 3. ẢNH (AJAX) - ĐÃ TỐI ƯU NÉN BẰNG JAVASCRIPT
+        // --- XỬ LÝ ẢNH (AJAX NÉN & ĐẨY LÊN LOCAL) ---
         const hiddenInput = document.getElementById('hidden-image-input');
         document.getElementById('btn-trigger-image-mobile').onclick = () => hiddenInput.click();
         const btnPc = document.getElementById('btn-trigger-image-pc');
@@ -513,15 +449,13 @@ if (isset($_SESSION['loggedin'])) {
         hiddenInput.onchange = function(e) {
             if(this.files && this.files[0]) {
                 const file = this.files[0];
-                const max_width = 1200; // Chiều rộng tối đa
+                const max_width = 1200; 
                 
-                // 1. Chèn chữ loading ngay lập tức để người dùng không phải chờ
                 const range = quill.getSelection(true);
                 const index = range ? range.index : quill.getLength();
                 const loadingText = '⏳ Đang nén & tải ảnh...'; 
                 quill.insertText(index, loadingText, 'bold', true);
 
-                // 2. Nén ảnh bằng Canvas trên trình duyệt
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = function(event) {
@@ -532,7 +466,6 @@ if (isset($_SESSION['loggedin'])) {
                         let width = img.width;
                         let height = img.height;
 
-                        // Tính toán tỷ lệ bóp nhỏ ảnh
                         if (width > max_width) {
                             height = Math.round((height * max_width) / width);
                             width = max_width;
@@ -541,21 +474,24 @@ if (isset($_SESSION['loggedin'])) {
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // Xuất ra file Blob siêu nhẹ (chất lượng 75%)
                         canvas.toBlob(async function(blob) {
                             const compressedFile = new File([blob], "image.jpg", { type: 'image/jpeg' });
                             const formData = new FormData();
                             formData.append('ajax_image', compressedFile);
                             
                             try {
-                                // Gửi file ĐÃ NÉN lên server
-                                const response = await fetch('admin.php', { method: 'POST', body: formData });
+                                const response = await fetch('admin.php', { 
+                                    method: 'POST', 
+                                    body: formData,
+                                    credentials: 'same-origin' // <--- Bổ sung dòng này để ép trình duyệt gửi kèm phiên đăng nhập
+                                });
                                 const data = await response.json();
                                 
                                 quill.deleteText(index, loadingText.length); 
                                 
-                                if (data.success) {
-                                    quill.insertEmbed(index, 'image', data.success);
+                                // ĐÃ SỬA: Dùng data.url thay vì data.success để chèn đúng link ảnh
+                                if (data.success && data.url) {
+                                    quill.insertEmbed(index, 'image', data.url);
                                     quill.setSelection(index + 1); 
                                 } else { 
                                     alert('Lỗi: ' + data.error); 
@@ -572,7 +508,6 @@ if (isset($_SESSION['loggedin'])) {
             }
         };
 
-        // 4. VIDEO
         const videoModal = document.getElementById('modal-video-embed');
         const embedInput = document.getElementById('embed-code-input');
         function toggleVideoModal() { 
@@ -580,7 +515,7 @@ if (isset($_SESSION['loggedin'])) {
             if(!videoModal.classList.contains('hidden')) embedInput.focus();
         }
         document.getElementById('btn-insert-video').onclick = toggleVideoModal;
-        document.getElementById('btn-insert-video-mobile').onclick = toggleVideoModal; // Sự kiện cho Mobile
+        document.getElementById('btn-insert-video-mobile').onclick = toggleVideoModal; 
         document.querySelectorAll('.video-modal-close').forEach(b => b.onclick = toggleVideoModal);
 
         document.getElementById('btn-confirm-embed').onclick = function() {
@@ -593,7 +528,6 @@ if (isset($_SESSION['loggedin'])) {
             } else { alert("Vui lòng dán đúng mã <iframe>!"); }
         };
 
-        // 5. SUBMIT
         function submitPost() {
             var content = document.querySelector('input[name=content]');
             content.value = quill.root.innerHTML;
@@ -618,6 +552,7 @@ if (isset($_SESSION['loggedin'])) {
                 }
             } catch (err) {}
         };
+        
         document.getElementById('btn-clean-text').onclick = () => {
             if(confirm('Làm sạch văn bản?')) {
                 let text = quill.getText();
