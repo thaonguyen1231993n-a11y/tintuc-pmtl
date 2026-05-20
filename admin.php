@@ -56,6 +56,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['ajax_image'])) {
     exit;
 }
 
+// --- XỬ LÝ DỌN DẸP ẢNH RÁC ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'cleanup_images') {
+    header('Content-Type: application/json');
+    if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+        echo json_encode(['success' => false, 'error' => 'Từ chối truy cập']);
+        exit;
+    }
+
+    require_once 'db.php';
+    try {
+        $pdo = getDB();
+        // Gom toàn bộ nội dung của tất cả bài viết thành 1 chuỗi khổng lồ để đối chiếu
+        $stmt = $pdo->query("SELECT content FROM posts");
+        $all_content = "";
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $all_content .= $row['content'];
+        }
+
+        $upload_dir = __DIR__ . '/uploads/';
+        if (!file_exists($upload_dir)) {
+            echo json_encode(['success' => true, 'message' => 'Thư mục rỗng, không có gì để dọn!']);
+            exit;
+        }
+
+        $files = array_diff(scandir($upload_dir), ['.', '..']);
+        $deleted_count = 0;
+        $freed_space = 0;
+
+        foreach ($files as $file) {
+            $file_path = $upload_dir . $file;
+            if (is_file($file_path)) {
+                // Nếu tên file KHÔNG TỒN TẠI ở bất cứ đâu trong chuỗi nội dung bài viết -> Xóa file
+                if (strpos($all_content, $file) === false) {
+                    $freed_space += filesize($file_path);
+                    unlink($file_path);
+                    $deleted_count++;
+                }
+            }
+        }
+
+        $freed_mb = round($freed_space / 1048576, 2); // Đổi byte sang MB
+        echo json_encode(['success' => true, 'message' => "Tuyệt vời! Đã dọn $deleted_count ảnh rác, giải phóng $freed_mb MB ổ cứng!"]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+    exit;
+}
+
 // 3. Gia hạn Cookie mỗi khi người dùng vào lại trang
 if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
     setcookie(session_name(), session_id(), time() + $lifetime, "/", "", $is_secure, true);
@@ -262,7 +310,8 @@ if (isset($_SESSION['loggedin'])) {
                     <div class="hidden md:flex gap-2">
                         <a href="admin.php?download_backup=true" class="text-xs bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 font-bold shadow-sm inline-block">Tải Backup</a>
                         <button type="button" id="btn-trigger-restore" class="text-xs bg-orange-500 text-white px-3 py-1.5 rounded hover:bg-orange-600 font-bold shadow-sm">Khôi Phục</button>
-                        <button id="btn-open-list-pc" class="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-200 border">📂 Danh Sách</button>
+                        <button type="button" class="btn-cleanup text-xs bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 font-bold shadow-sm">Dọn Rác</button>
+                        <button id="btn-open-list-pc" class="text-xs bg-gray-100 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-200 border">QL Bài Đăng</button>
                         <button type="button" id="btn-header-save" class="text-xs bg-blue-600 text-white px-4 py-1.5 rounded hover:bg-blue-700 font-bold shadow-sm">🚀 Đăng Bài</button>
                     </div>
                 </div>
@@ -357,6 +406,7 @@ if (isset($_SESSION['loggedin'])) {
                 <div class="p-2 mb-2 border-b md:hidden text-center flex flex-col gap-2">
                     <a href="admin.php?download_backup=true" class="w-full bg-green-100 text-green-700 py-2 rounded font-bold border border-green-300 block">Tải Backup (.sql)</a>
                     <button type="button" id="btn-trigger-restore-mobile" class="w-full bg-orange-100 text-orange-700 py-2 rounded font-bold border border-orange-300">Khôi Phục Database (.sql)</button>
+                    <button type="button" class="btn-cleanup w-full bg-red-100 text-red-700 py-2 rounded font-bold border border-red-300 mt-2">Dọn Dẹp Rác</button>
                 </div>
 
                 <?php if (empty($all_posts)): ?> <p class="text-center mt-4">Chưa có bài nào.</p> <?php else: ?>
@@ -563,6 +613,32 @@ if (isset($_SESSION['loggedin'])) {
                 quill.setText(text);
             }
         };
+
+        // --- XỬ LÝ NÚT DỌN RÁC ---
+        document.querySelectorAll('.btn-cleanup').forEach(btn => {
+            btn.onclick = async () => {
+                if (!confirm('⚠️ Bạn có chắc chắn muốn quét và tiêu hủy toàn bộ ảnh không nằm trong bất kỳ bài viết nào? (Hành động này không thể hoàn tác)')) return;
+                
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '⏳ Đang quét...';
+                try {
+                    const formData = new FormData();
+                    formData.append('action', 'cleanup_images');
+                    const res = await fetch('admin.php', { method: 'POST', body: formData, credentials: 'same-origin' });
+                    const data = await res.json();
+                    
+                    if (data.success) {
+                        alert('✅ ' + data.message);
+                    } else {
+                        alert('❌ Lỗi: ' + data.error);
+                    }
+                } catch (err) {
+                    alert('❌ Lỗi kết nối máy chủ!');
+                } finally {
+                    btn.innerHTML = originalText;
+                }
+            };
+        });
     </script>
     <?php endif; ?>
 </body>
