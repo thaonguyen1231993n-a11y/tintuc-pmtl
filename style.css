@@ -116,6 +116,12 @@ body {
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
+.content-wrapper p {
+    margin-bottom: 12px; /* Khoảng cách giữa các đoạn văn (có thể tăng giảm tùy ý) */
+    line-height: 1.6;    /* Chiều cao của từng dòng chữ giúp mắt đọc không bị mỏi */
+    text-align: justify; /* Căn đều 2 bên lề cho vuông vức */
+}
+
 /* --- TEXT CONTENT --- */
 .content-wrapper {
     margin-top: 15px; font-size: 16px; line-height: 1.6; color: #3E2723; text-align: justify; word-wrap: break-word; position: relative; transition: max-height 0.5s ease; overflow: hidden;
