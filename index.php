@@ -34,6 +34,35 @@
             margin-bottom: 8px !important;
             line-height: 1.6 !important;
         }
+
+        /* --- ĐÂY LÀ ĐOẠN CSS MENU ĐƯỢC CHÈN TRỰC TIẾP --- */
+        .main-menu {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px; 
+            background-color: #FFF8E1; 
+            border-bottom: 1px solid #E6D5B8; 
+        }
+
+        .main-menu a {
+            text-decoration: none; 
+            background-color: #8B4513; 
+            color: #fff !important; /* Thêm !important để ghi đè màu xanh mặc định */
+            padding: 8px 15px; 
+            border-radius: 4px; 
+            font-size: 13px; 
+            font-weight: bold; 
+            white-space: nowrap; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+            transition: 0.3s;
+        }
+
+        .main-menu a:hover {
+            background-color: #6D360F; 
+            transform: translateY(-1px); 
+        }
     </style>
 </head>
 <body>
