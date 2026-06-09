@@ -48,6 +48,13 @@
         <a href="admin.php" class="btn-login-header">Đăng nhập</a>
     </header>
 
+    <nav class="main-menu">
+        <a href="https://www.pmtl.site/" target="_blank" rel="noopener noreferrer">Trang Chủ</a>
+        <a href="https://radio.pmtl.site/" target="_blank" rel="noopener noreferrer">Kênh Radio</a>
+        <a href="https://blogs.pmtl.site/" target="_blank" rel="noopener noreferrer">Blogs</a>
+        <a href="https://thuvien.pmtl.site/" target="_blank" rel="noopener noreferrer">Thư Viện</a>
+        <a href="https://phungsuvienao.pmtl.site/" target="_blank" rel="noopener noreferrer">Phụng Sự Viên Ảo</a>
+    </nav>
     <?php
     date_default_timezone_set('Asia/Ho_Chi_Minh');
     require_once 'db.php';
