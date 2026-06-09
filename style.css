@@ -167,34 +167,3 @@ body {
 .content-wrapper a { color: #b35400; text-decoration: none; border-bottom: 1px dotted #b35400; font-weight: bold; word-break: break-all; }
 footer { text-align: center; padding: 20px; background-color: #FFFBBE; border-top: 1px solid #E6D5B8; margin-top: 20px; }
 footer a { color: #8B4513; text-decoration: none; font-size: 13px; }
-
-/* --- MENU ĐIỀU HƯỚNG BÊN DƯỚI HEADER --- */
-.main-menu {
-    display: flex;
-    flex-wrap: wrap; /* Tự động rớt dòng nếu màn hình điện thoại nhỏ */
-    justify-content: center; /* Căn giữa các nút */
-    gap: 10px; /* Khoảng cách giữa các nút */
-    padding: 15px; 
-    background-color: #FFF8E1; /* Nền vàng nhạt cho tiệp với màu website */
-    border-bottom: 1px solid #E6D5B8; /* Đường kẻ mờ phân cách */
-}
-
-/* Sao chép toàn bộ thuộc tính màu sắc từ nút đăng nhập sang nút menu */
-.main-menu a {
-    text-decoration: none; 
-    background-color: #8B4513; /* Màu nền nâu */
-    color: #fff; /* Chữ màu trắng */
-    padding: 8px 15px; 
-    border-radius: 4px; 
-    font-size: 13px; 
-    font-weight: bold; 
-    white-space: nowrap; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
-    transition: 0.3s;
-}
-
-/* Hiệu ứng khi di chuột vào nút */
-.main-menu a:hover {
-    background-color: #6D360F; /* Nền tối lại 1 chút giống nút đăng nhập */
-    transform: translateY(-1px); /* Nảy nhẹ lên */
-}
