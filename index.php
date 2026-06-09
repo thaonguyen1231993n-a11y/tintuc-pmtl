@@ -1,9 +1,55 @@
+<?php
+// BƯỚC 1: XỬ LÝ DỮ LIỆU CHIA SẺ (OPEN GRAPH) CHO FACEBOOK / ZALO
+require_once 'db.php';
+$protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? "https" : "http";
+$domain = $protocol . "://" . $_SERVER['HTTP_HOST'];
+$current_url = $domain . $_SERVER['REQUEST_URI'];
+
+// Khởi tạo thẻ mặc định nếu chia sẻ trang chủ
+$og_title = "Pháp Môn Tâm Linh 心靈法門";
+$og_desc = "Trang tin tức mới nhất";
+$og_image = $domain . "/logo.png"; 
+
+// Nếu phát hiện có chia sẻ bài viết cụ thể (?id=)
+if (isset($_GET['id'])) {
+    try {
+        $pdo = getDB();
+        $stmt = $pdo->prepare("SELECT * FROM posts WHERE id = ?");
+        $stmt->execute([(int)$_GET['id']]);
+        $share_post = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($share_post) {
+            $og_title = strip_tags($share_post['title']);
+            
+            // Trích xuất văn bản ngắn (khoảng 150 ký tự) để làm mô tả
+            $plain_text = strip_tags($share_post['content']);
+            $og_desc = mb_substr($plain_text, 0, 150, "UTF-8") . "...";
+
+            // Tìm ảnh đầu tiên trong bài viết để làm Thumbnail
+            if (preg_match('/<img[^>]+src="([^">]+)"/i', $share_post['content'], $matches)) {
+                $img_src = $matches[1];
+                // Nếu ảnh là đường dẫn tương đối (/uploads/...), ta gắn thêm domain vào
+                if (strpos($img_src, 'http') !== 0) {
+                    $og_image = $domain . (strpos($img_src, '/') === 0 ? '' : '/') . $img_src;
+                } else {
+                    $og_image = $img_src;
+                }
+            }
+        }
+    } catch (Exception $e) {}
+}
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pháp Môn Tâm Linh 心靈法門</title>
+    <meta property="og:url" content="<?php echo $current_url; ?>" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="<?php echo htmlspecialchars($og_title); ?>" />
+    <meta property="og:description" content="<?php echo htmlspecialchars($og_desc); ?>" />
+    <meta property="og:image" content="<?php echo htmlspecialchars($og_image); ?>" />
     <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -62,6 +108,39 @@
         .main-menu a:hover {
             background-color: #6D360F; 
             transform: translateY(-1px); 
+        }
+        /* Container bài viết cần có position relative để làm gốc tọa độ */
+        .news-item {
+            position: relative;
+            /* (Giữ nguyên các thuộc tính cũ của bạn, chỉ cần đảm bảo có dòng trên) */
+        }
+        
+        /* Nút Share góc trên bên phải */
+        .btn-share {
+            position: absolute;
+            top: 20px;
+            right: 0;
+            background: #FFF8E1;
+            color: #8B4513;
+            border: 1px solid #E6D5B8;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .btn-share:hover {
+            background: #8B4513;
+            color: #FFF;
+        }
+        /* Ẩn nút share trên điện thoại nếu chật quá, hoặc chỉnh cho nó nhỏ lại */
+        @media (max-width: 480px) {
+            .btn-share { top: 10px; right: 0; padding: 4px 8px; font-size: 11px; }
         }
     </style>
 </head>
@@ -148,6 +227,14 @@
                 $final_content = preg_replace('/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', $final_content);
 
                 echo '<div id="post-' . $row['id'] . '" class="news-item">';
+
+                // MỚI THÊM: Tạo link và nút share
+                $share_link = $domain . "/index.php?id=" . $row['id'];
+                echo '<button class="btn-share" onclick="copyShareLink(\'' . $share_link . '\', this)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                        Chia sẻ
+                      </button>';
+
                 echo '<span class="date">' . $date . '</span>';
                 echo '<h3 class="title">' . htmlspecialchars($title) . '</h3>';
 
@@ -239,6 +326,48 @@
             });
 
         }, 500); 
+    });
+</script>
+<script>
+    // Hàm Copy link khi bấm nút Share
+    function copyShareLink(url, btn) {
+        navigator.clipboard.writeText(url).then(function() {
+            var originalText = btn.innerHTML;
+            btn.innerHTML = "✅ Đã copy link!";
+            btn.style.backgroundColor = "#4CAF50";
+            btn.style.color = "white";
+            
+            setTimeout(function() {
+                btn.innerHTML = originalText;
+                btn.style.backgroundColor = "";
+                btn.style.color = "";
+            }, 2000);
+        }).catch(function(err) {
+            alert("Lỗi copy: " + err);
+        });
+    }
+
+    // Tự động cuộn đến bài viết nếu người xem click link từ Facebook/Zalo
+    window.addEventListener('load', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetId = urlParams.get('id');
+        if (targetId) {
+            const targetPost = document.getElementById('post-' + targetId);
+            if (targetPost) {
+                // Tự động mở khung bài viết nếu nó đang bị thu gọn
+                const contentDiv = targetPost.querySelector('.content-collapsed');
+                if (contentDiv) {
+                    contentDiv.classList.remove('content-collapsed');
+                    contentDiv.style.maxHeight = "none";
+                    const btnMore = targetPost.querySelector('.btn-readmore');
+                    if(btnMore) btnMore.style.display = 'none';
+                }
+                // Cuộn mượt mà đến bài viết đó
+                setTimeout(() => {
+                    targetPost.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 500);
+            }
+        }
     });
 </script>
 </body>
