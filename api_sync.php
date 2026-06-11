@@ -65,26 +65,27 @@ try {
         $contentHtml .= '</div>';
     } 
     // 2. XỬ LÝ ẢNH LOCAL: Nếu không phải video và có mảng ảnh -> Tiến hành tải về máy chủ
-    unset($is_secure);
-elseif (!empty($images) && is_array($images)) {
+    elseif (!empty($images) && is_array($images)) {
         $target_dir = __DIR__ . "/uploads/";
         if (!file_exists($target_dir)) {
             mkdir($target_dir, 0755, true);
         }
 
         // Hàm tiện ích dùng cURL để tải ảnh an toàn chống chặn
-        function downloadFbImage($url, $savePath) {
-            $ch = curl_init($url);
-            curl_setopt($ch,专CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch,专CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($ch,专CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-            curl_setopt($ch,专CURLOPT_TIMEOUT, 30);
-            $data = curl_exec($ch);
-            curl_close($ch);
-            if ($data) {
-                return file_put_contents($savePath, $data) !== false;
+        if (!function_exists('downloadFbImage')) {
+            function downloadFbImage($url, $savePath) {
+                $ch = curl_init($url);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+                curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+                $data = curl_exec($ch);
+                curl_close($ch);
+                if ($data) {
+                    return file_put_contents($savePath, $data) !== false;
+                }
+                return false;
             }
-            return false;
         }
 
         // Duyệt qua từng link ảnh từ Apify gửi sang
@@ -104,7 +105,7 @@ elseif (!empty($images) && is_array($images)) {
             // Tiến hành tải và lưu ảnh
             if (downloadFbImage($imgUrl, $local_save_path)) {
                 // Đóng gói đường dẫn cục bộ vào thẻ media-box như cũ
-                $contentHtml .= '<div class="media-box"><img src="/uploads/' . $new_file_name . '" alt="Ảnh Khai Thị"></div>';
+                $contentHtml .= '<div class="media-box"><img src="/uploads/' . $new_file_name . '" alt="Ảnh Tin Tức"></div>';
             }
         }
     }
