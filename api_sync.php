@@ -99,7 +99,7 @@ try {
 
             // Xuất thẻ img trơn y như cách Quill làm (không bọc div, không dùng style inline)
             if (downloadFbImage($imgUrl, $local_save_path)) {
-                $contentHtml .= '<img src="/uploads/' . $new_file_name . '">';
+                $contentHtml .= '<p><img src="/uploads/' . $new_file_name . '"></p>';
             }
         }
     }
