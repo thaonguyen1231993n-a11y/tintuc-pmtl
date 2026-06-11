@@ -59,9 +59,10 @@ try {
     // 1. XỬ LÝ VIDEO: Nếu là bài viết video, nhúng Iframe dùng Link bài viết gốc
     if ($is_video && !empty($fb_url)) {
         $encoded_url = urlencode($fb_url);
-        // Khung Iframe chuẩn của Facebook Social Plugin, tự động ăn khớp với class media-box của bạn
+        // Đã xóa width=500 mặc định của Facebook, thêm style inline width: 100%.
+        // Dữ liệu HTML này khi lưu vào Database sẽ được file index.php bọc lại và JS tự động gán tỷ lệ chuẩn 16/9.
         $contentHtml .= '<div class="media-box">';
-        $contentHtml .= '<iframe src="https://www.facebook.com/plugins/video.php?href=' . $encoded_url . '&show_text=false&width=500" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>';
+        $contentHtml .= '<iframe src="https://www.facebook.com/plugins/video.php?href=' . $encoded_url . '&show_text=false" style="width: 100%; border: none; overflow: hidden;" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>';
         $contentHtml .= '</div>';
     } 
     // 2. XỬ LÝ ẢNH LOCAL: Nếu không phải video và có mảng ảnh -> Tiến hành tải về máy chủ
@@ -90,7 +91,6 @@ try {
 
         // Duyệt qua từng link ảnh từ Apify gửi sang
         foreach ($images as $imgObj) {
-            // Tùy theo Actor Apify, link có thể là chuỗi hoặc nằm trong object {url: '...'}
             $imgUrl = is_array($imgObj) ? (isset($imgObj['url']) ? $imgObj['url'] : '') : $imgObj;
             if (empty($imgUrl)) continue;
 
@@ -102,10 +102,9 @@ try {
             $new_file_name = uniqid() . '_' . bin2hex(random_bytes(2)) . '.' . $file_extension;
             $local_save_path = $target_dir . $new_file_name;
 
-            // Tiến hành tải và lưu ảnh
+            // Tiến hành tải và lưu ảnh (Bổ sung inline style max-width cho an toàn)
             if (downloadFbImage($imgUrl, $local_save_path)) {
-                // Đóng gói đường dẫn cục bộ vào thẻ media-box như cũ
-                $contentHtml .= '<div class="media-box"><img src="/uploads/' . $new_file_name . '" alt="Ảnh Tin Tức"></div>';
+                $contentHtml .= '<div class="media-box"><img src="/uploads/' . $new_file_name . '" alt="Ảnh Tin Tức" style="width: 100%; height: auto;"></div>';
             }
         }
     }
