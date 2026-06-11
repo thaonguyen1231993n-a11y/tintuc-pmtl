@@ -54,25 +54,22 @@ try {
     }
 
     // --- BẮT ĐẦU DỰNG NỘI DUNG HTML ---
+    // (Định dạng cấu trúc y hệt đoạn mã do trình soạn thảo Quill sinh ra bên admin.php)
     $contentHtml = "";
 
-    // 1. XỬ LÝ VIDEO: Nếu là bài viết video, nhúng Iframe dùng Link bài viết gốc
+    // 1. XỬ LÝ VIDEO
     if ($is_video && !empty($fb_url)) {
         $encoded_url = urlencode($fb_url);
-        // Đã xóa width=500 mặc định của Facebook, thêm style inline width: 100%.
-        // Dữ liệu HTML này khi lưu vào Database sẽ được file index.php bọc lại và JS tự động gán tỷ lệ chuẩn 16/9.
-        $contentHtml .= '<div class="media-box">';
-        $contentHtml .= '<iframe src="https://www.facebook.com/plugins/video.php?href=' . $encoded_url . '&show_text=false" style="width: 100%; border: none; overflow: hidden;" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>';
-        $contentHtml .= '</div>';
+        // KHÔNG bọc thẻ div bên ngoài. Xuất thẳng thẻ iframe với max-width y như JS admin.php đang làm.
+        $contentHtml .= '<iframe src="https://www.facebook.com/plugins/video.php?href=' . $encoded_url . '&show_text=false" style="width: 100%; max-width: 100%; border: none; overflow: hidden;" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>';
     } 
-    // 2. XỬ LÝ ẢNH LOCAL: Nếu không phải video và có mảng ảnh -> Tiến hành tải về máy chủ
+    // 2. XỬ LÝ ẢNH LOCAL
     elseif (!empty($images) && is_array($images)) {
         $target_dir = __DIR__ . "/uploads/";
         if (!file_exists($target_dir)) {
             mkdir($target_dir, 0755, true);
         }
 
-        // Hàm tiện ích dùng cURL để tải ảnh an toàn chống chặn
         if (!function_exists('downloadFbImage')) {
             function downloadFbImage($url, $savePath) {
                 $ch = curl_init($url);
@@ -89,29 +86,38 @@ try {
             }
         }
 
-        // Duyệt qua từng link ảnh từ Apify gửi sang
         foreach ($images as $imgObj) {
             $imgUrl = is_array($imgObj) ? (isset($imgObj['url']) ? $imgObj['url'] : '') : $imgObj;
             if (empty($imgUrl)) continue;
 
             $file_extension = strtolower(pathinfo(parse_url($imgUrl, PHP_URL_PATH), PATHINFO_EXTENSION));
             if (!in_array($file_extension, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-                $file_extension = 'jpg'; // Mặc định nếu không bắt được đuôi file
+                $file_extension = 'jpg'; 
             }
 
             $new_file_name = uniqid() . '_' . bin2hex(random_bytes(2)) . '.' . $file_extension;
             $local_save_path = $target_dir . $new_file_name;
 
-            // Tiến hành tải và lưu ảnh (Bổ sung inline style max-width cho an toàn)
             if (downloadFbImage($imgUrl, $local_save_path)) {
-                $contentHtml .= '<div class="media-box"><img src="/uploads/' . $new_file_name . '" alt="Ảnh Tin Tức" style="width: 100%; height: auto;"></div>';
+                // Bọc ảnh bằng thẻ <p> kèm margin/max-width y như cách trình soạn thảo Quill đang định dạng.
+                $contentHtml .= '<p><img src="/uploads/' . $new_file_name . '" alt="Ảnh Tin Tức" style="max-width: 100%; height: auto; display: block; margin: 10px auto;"></p>';
             }
         }
     }
 
     // 3. XỬ LÝ TEXT
     if (!empty($text)) {
-        $contentHtml .= '<div class="text-content"><p>' . str_replace("\n", '<br>', htmlspecialchars($text)) . '</p></div>';
+        // Tách dòng văn bản và bọc trong thẻ <p> thay vì xài thẻ <br> (Đây chính là chuẩn của Quill editor)
+        $paragraphs = explode("\n", str_replace("\r", "", $text));
+        foreach ($paragraphs as $p) {
+            $p = trim($p);
+            if ($p !== '') {
+                $contentHtml .= '<p>' . htmlspecialchars($p) . '</p>';
+            } else {
+                // Giữ lại khoảng trống y như khi gõ Enter rỗng trong Editor
+                $contentHtml .= '<p><br></p>';
+            }
+        }
     }
 
     // Lưu bài viết vào Database
