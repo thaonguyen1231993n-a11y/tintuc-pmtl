@@ -54,14 +54,13 @@ try {
     }
 
     // --- BẮT ĐẦU DỰNG NỘI DUNG HTML ---
-    // (Định dạng cấu trúc y hệt đoạn mã do trình soạn thảo Quill sinh ra bên admin.php)
     $contentHtml = "";
 
-    // 1. XỬ LÝ VIDEO
+    // 1. XỬ LÝ VIDEO: Giả lập 100% mã nguồn do trình soạn thảo Quill sinh ra
     if ($is_video && !empty($fb_url)) {
         $encoded_url = urlencode($fb_url);
-        // KHÔNG bọc thẻ div bên ngoài. Xuất thẳng thẻ iframe với max-width y như JS admin.php đang làm.
-        $contentHtml .= '<iframe src="https://www.facebook.com/plugins/video.php?href=' . $encoded_url . '&show_text=false" style="width: 100%; max-width: 100%; border: none; overflow: hidden;" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>';
+        // Sử dụng class="ql-video" và width="560" height="314" để JS trên index.php tính đúng tỷ lệ
+        $contentHtml .= '<iframe class="ql-video" frameborder="0" allowfullscreen="true" src="https://www.facebook.com/plugins/video.php?height=314&width=560&href=' . $encoded_url . '&show_text=false" height="314" width="560"></iframe>';
     } 
     // 2. XỬ LÝ ẢNH LOCAL
     elseif (!empty($images) && is_array($images)) {
@@ -98,23 +97,21 @@ try {
             $new_file_name = uniqid() . '_' . bin2hex(random_bytes(2)) . '.' . $file_extension;
             $local_save_path = $target_dir . $new_file_name;
 
+            // Xuất thẻ img trơn y như cách Quill làm (không bọc div, không dùng style inline)
             if (downloadFbImage($imgUrl, $local_save_path)) {
-                // Bọc ảnh bằng thẻ <p> kèm margin/max-width y như cách trình soạn thảo Quill đang định dạng.
-                $contentHtml .= '<p><img src="/uploads/' . $new_file_name . '" alt="Ảnh Tin Tức" style="max-width: 100%; height: auto; display: block; margin: 10px auto;"></p>';
+                $contentHtml .= '<img src="/uploads/' . $new_file_name . '">';
             }
         }
     }
 
-    // 3. XỬ LÝ TEXT
+    // 3. XỬ LÝ TEXT: Tách dòng bằng thẻ <p>
     if (!empty($text)) {
-        // Tách dòng văn bản và bọc trong thẻ <p> thay vì xài thẻ <br> (Đây chính là chuẩn của Quill editor)
         $paragraphs = explode("\n", str_replace("\r", "", $text));
         foreach ($paragraphs as $p) {
             $p = trim($p);
             if ($p !== '') {
                 $contentHtml .= '<p>' . htmlspecialchars($p) . '</p>';
             } else {
-                // Giữ lại khoảng trống y như khi gõ Enter rỗng trong Editor
                 $contentHtml .= '<p><br></p>';
             }
         }
