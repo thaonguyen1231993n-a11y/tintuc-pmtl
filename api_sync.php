@@ -39,6 +39,7 @@ if (!$input || empty($input['title'])) {
 $title = trim($input['title']);
 $text = isset($input['text']) ? trim($input['text']) : '';
 $fb_url = isset($input['fb_url']) ? trim($input['fb_url']) : '';
+$video_url = isset($input['video_url']) ? trim($input['video_url']) : ''; // THÊM DÒNG NÀY: Nhận link video chuyên dụng
 $images = isset($input['images']) ? $input['images'] : [];
 $is_video = isset($input['is_video']) ? (bool)$input['is_video'] : false;
 
@@ -56,11 +57,15 @@ try {
     // --- BẮT ĐẦU DỰNG NỘI DUNG HTML ---
     $contentHtml = "";
 
-    // 1. XỬ LÝ VIDEO: Giả lập 100% mã nguồn do trình soạn thảo Quill sinh ra
-    if ($is_video && !empty($fb_url)) {
-        $encoded_url = urlencode($fb_url);
-        // Sử dụng class="ql-video" và width="560" height="314" để JS trên index.php tính đúng tỷ lệ
-        $contentHtml .= '<iframe class="ql-video" frameborder="0" allowfullscreen="true" src="https://www.facebook.com/plugins/video.php?height=314&width=560&href=' . $encoded_url . '&show_text=false" height="314" width="560"></iframe>';
+    // 1. XỬ LÝ VIDEO: Ưu tiên dùng video_url chính xác, nếu không có mới lùi về dùng fb_url
+    if ($is_video) {
+        $url_to_embed = !empty($video_url) ? $video_url : $fb_url;
+        
+        if (!empty($url_to_embed)) {
+            $encoded_url = urlencode($url_to_embed);
+            // Sử dụng tỷ lệ 560x314 mô phỏng Quill của bạn
+            $contentHtml .= '<iframe class="ql-video" frameborder="0" allowfullscreen="true" src="https://www.facebook.com/plugins/video.php?height=314&width=560&href=' . $encoded_url . '&show_text=false" height="314" width="560"></iframe>';
+        }
     } 
     // 2. XỬ LÝ ẢNH LOCAL
     elseif (!empty($images) && is_array($images)) {
