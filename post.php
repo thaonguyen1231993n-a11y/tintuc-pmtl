@@ -24,7 +24,7 @@ try {
     <title><?php echo htmlspecialchars($post['title']); ?></title>
     <link rel="stylesheet" href="style.css"> 
     
-    <link rel="canonical" href="https://tintuc.pmtl.site/post.php?id=<?php echo $post['id']; ?>" />
+    <link rel="canonical" href="https://tintuc.pmtl.site/post-<?php echo $post['id']; ?>.html" />
     
     <?php 
         $plain_text = strip_tags($post['content']);
