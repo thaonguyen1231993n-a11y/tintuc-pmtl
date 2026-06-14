@@ -1,4 +1,5 @@
 <?php
+set_time_limit(0);
 ini_set('display_errors', 0);
 header('Content-Type: application/json; charset=utf-8');
 
@@ -77,16 +78,22 @@ try {
         if (!function_exists('downloadFbImage')) {
             function downloadFbImage($url, $savePath) {
                 $ch = curl_init($url);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                $fp = fopen($savePath, 'wb');
+                curl_setopt($ch, CURLOPT_FILE, $fp);
+                curl_setopt($ch, CURLOPT_HEADER, 0);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 10); // ÉP BUỘC TIME-OUT LÀ 10 GIÂY MỖI ẢNH
                 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-                curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-                $data = curl_exec($ch);
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                 curl_close($ch);
-                if ($data) {
-                    return file_put_contents($savePath, $data) !== false;
+                fclose($fp);
+            
+                if ($httpCode != 200) {
+                    unlink($savePath); // Nếu lỗi thì xóa file rác
+                    return false;
                 }
-                return false;
+                return true;
             }
         }
 
