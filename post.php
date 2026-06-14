@@ -85,7 +85,12 @@ try {
             </div>
             
             <div class="content-wrapper">
-                <?php echo $post['content']; ?>
+                <?php 
+                    $content = $post['content'];
+                    // Tự động chuyển đổi các link dạng text thành link click được (giống index.php)
+                    $content = preg_replace('/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', $content);
+                    echo $content; 
+                ?>
             </div>
             
             <div style="margin-top: 50px; text-align: center; border-top: 1px solid #eee; padding-top: 30px;">
