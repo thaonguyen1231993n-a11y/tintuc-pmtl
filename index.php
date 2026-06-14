@@ -52,6 +52,7 @@ if (isset($_GET['id'])) {
     <meta property="og:image" content="<?php echo htmlspecialchars($og_image); ?>" />
     <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="style.css">
+    <link rel="canonical" href="https://tintuc.pmtl.site/" />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style>
         /* Tối ưu lại khoảng cách: Thở được, thoáng đãng nhưng không bị rỗng toác */
