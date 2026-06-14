@@ -51,7 +51,7 @@ if (isset($_GET['id'])) {
     <meta property="og:description" content="<?php echo htmlspecialchars($og_desc); ?>" />
     <meta property="og:image" content="<?php echo htmlspecialchars($og_image); ?>" />
     <link rel="icon" href="logo.png" type="image/png">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.1">
     <link rel="canonical" href="https://tintuc.pmtl.site/" />
 </head>
 <body>
