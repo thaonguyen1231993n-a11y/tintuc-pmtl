@@ -24,12 +24,12 @@ try {
     <title><?php echo htmlspecialchars($post['title']); ?></title>
     
     <?php 
-        // Tạo description ngắn
+        // Trích xuất văn bản làm thẻ mô tả SEO
         $plain_text = strip_tags($post['content']);
         $meta_desc = mb_substr($plain_text, 0, 150, "UTF-8") . "...";
         
-        // Tìm ảnh đầu tiên làm Thumbnail cho Facebook/Zalo
-        $og_image = "https://tintuc.pmtl.site/logo.png"; // Ảnh mặc định
+        // Tìm ảnh trong bài để làm Thumbnail khi share Facebook, Zalo
+        $og_image = "https://tintuc.pmtl.site/logo.png";
         if (preg_match('/<img[^>]+src="([^">]+)"/i', $post['content'], $matches)) {
             $img_src = $matches[1];
             if (strpos($img_src, 'http') !== 0) {
@@ -47,21 +47,57 @@ try {
     <meta property="og:description" content="<?php echo htmlspecialchars($meta_desc); ?>" />
     <meta property="og:image" content="<?php echo htmlspecialchars($og_image); ?>" />
 
-    <link rel="stylesheet" href="style.css?v=1.1">
+    <link rel="stylesheet" href="style.css?v=1.1"> 
     <link rel="icon" href="logo.png" type="image/png">
     
     <link rel="canonical" href="https://tintuc.pmtl.site/post-<?php echo $post['id']; ?>.html" />
 </head>
 <body>
-    <div class="container" style="padding: 20px;">
-        <h1 style="color: #8B4513;"><?php echo htmlspecialchars($post['title']); ?></h1>
-        <span style="font-size: 12px; color: #A67B5B;"><?php echo date("d/m/Y H:i", strtotime($post['created_at'])); ?></span>
+    <div class="container">
         
-        <div class="content-wrapper" style="margin-top: 20px;">
-            <?php echo $post['content']; ?>
+        <header class="main-header">
+            <img src="logo.png" alt="Logo" class="logo">
+            <div class="header-content">
+                <h1>Pháp Môn Tâm Linh 心靈法門</h1>
+                <p>Trang tin tức mới nhất</p>
+            </div>
+            <a href="admin.php" class="btn-login-header">Đăng nhập</a>
+        </header>
+
+        <nav class="main-menu">
+            <a href="https://www.pmtl.site/" target="_blank" rel="noopener noreferrer">Trang Chủ</a>
+            <a href="https://radio.pmtl.site/" target="_blank" rel="noopener noreferrer">Kênh Radio</a>
+            <a href="https://blogs.pmtl.site/" target="_blank" rel="noopener noreferrer">Blogs</a>
+            <a href="https://thuvien.pmtl.site/" target="_blank" rel="noopener noreferrer">Thư Viện</a>
+            <a href="https://phungsuvienao.pmtl.site/" target="_blank" rel="noopener noreferrer">Phụng Sự Viên Ảo</a>
+        </nav>
+
+        <div style="padding: 30px 20px;">
+            
+            <h1 style="color: #5D4037; font-size: 26px; margin-top: 0; margin-bottom: 15px; font-weight: bold; line-height: 1.4;">
+                <?php echo htmlspecialchars($post['title']); ?>
+            </h1>
+            
+            <div style="margin-bottom: 25px;">
+                <span style="font-size: 13px; background: #FFF8E1; color: #A67B5B; padding: 5px 10px; border-radius: 4px; font-weight: bold;">
+                    ⏰ <?php echo date("d/m/Y H:i", strtotime($post['created_at'])); ?>
+                </span>
+            </div>
+            
+            <div class="content-wrapper">
+                <?php echo $post['content']; ?>
+            </div>
+            
+            <div style="margin-top: 50px; text-align: center; border-top: 1px solid #eee; padding-top: 30px;">
+                <a href="/" style="display: inline-block; padding: 10px 30px; background-color: #8B4513; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);" onmouseover="this.style.backgroundColor='#6D360F'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#8B4513'; this.style.transform='translateY(0)';">
+                    &larr; Quay về Trang Chủ
+                </a>
+            </div>
+
         </div>
         
-        <a href="index.php" style="display: inline-block; margin-top: 30px; color: #8B4513;">&larr; Về trang chủ</a>
+        <footer></footer>
+        
     </div>
 </body>
 </html>
