@@ -2,3 +2,5 @@ RewriteEngine On
 RewriteBase /
 
 RewriteRule ^post-([0-9]+)\.html$ post.php?id=$1 [L,QSA]
+
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
