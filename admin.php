@@ -46,7 +46,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['ajax_image']) && !is
     $target_file = $target_dir . $new_file_name;
 
     $allowed_types = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime_type = finfo_file($finfo, $_FILES["ajax_image"]["tmp_name"]);
+    finfo_close($finfo);
     
+    $allowed_mimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+    if (!in_array($mime_type, $allowed_mimes)) {
+        echo json_encode(['success' => false, 'error' => 'File không hợp lệ hoặc chứa mã độc!']);
+        exit;
+    }
     if (in_array($file_extension, $allowed_types) && move_uploaded_file($_FILES["ajax_image"]["tmp_name"], $target_file)) {
         // Trả về đúng link local /uploads/...
         echo json_encode(['success' => true, 'url' => '/uploads/' . $new_file_name]);
@@ -67,16 +76,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     require_once 'db.php';
     try {
         $pdo = getDB();
-        // Gom toàn bộ nội dung của tất cả bài viết thành 1 chuỗi khổng lồ để đối chiếu
-        $stmt = $pdo->query("SELECT content FROM posts");
-        $all_content = "";
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $all_content .= $row['content'];
-        }
-
         $upload_dir = __DIR__ . '/uploads/';
         if (!file_exists($upload_dir)) {
-            echo json_encode(['success' => true, 'message' => 'Thư mục rỗng, không có gì để dọn!']);
+            echo json_encode(['success' => true, 'message' => 'Thư mục rỗng!']);
             exit;
         }
 
@@ -84,11 +86,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $deleted_count = 0;
         $freed_space = 0;
 
+        // Chuẩn bị sẵn câu lệnh SQL (Chỉ quét, không lôi data vào RAM)
+        $stmtCheck = $pdo->prepare("SELECT 1 FROM posts WHERE content LIKE :filename LIMIT 1");
+
         foreach ($files as $file) {
             $file_path = $upload_dir . $file;
             if (is_file($file_path)) {
-                // Nếu tên file KHÔNG TỒN TẠI ở bất cứ đâu trong chuỗi nội dung bài viết -> Xóa file
-                if (strpos($all_content, $file) === false) {
+                // Kiểm tra xem tên file có nằm trong bài viết nào không
+                $stmtCheck->execute([':filename' => '%' . $file . '%']);
+                if (!$stmtCheck->fetch()) { 
+                    // Không có bài nào chứa tên file này -> Xóa
                     $freed_space += filesize($file_path);
                     unlink($file_path);
                     $deleted_count++;
@@ -96,8 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
         }
 
-        $freed_mb = round($freed_space / 1048576, 2); // Đổi byte sang MB
-        echo json_encode(['success' => true, 'message' => "Tuyệt vời! Đã dọn $deleted_count ảnh rác, giải phóng $freed_mb MB ổ cứng!"]);
+        $freed_mb = round($freed_space / 1048576, 2);
+        echo json_encode(['success' => true, 'message' => "Đã dọn $deleted_count ảnh rác, giải phóng $freed_mb MB!"]);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
@@ -140,54 +147,37 @@ if (isset($_GET['logout'])) { session_destroy(); header("Location: admin.php"); 
 
 // --- XỬ LÝ KHÔI PHỤC DATABASE ---
 if (isset($_POST['restore_db']) && isset($_SESSION['loggedin']) && isset($_FILES['backup_file'])) {
-    set_time_limit(0); 
     if ($_FILES['backup_file']['error'] === UPLOAD_ERR_OK) {
         $ext = strtolower(pathinfo($_FILES['backup_file']['name'], PATHINFO_EXTENSION));
         if ($ext === 'sql') {
-            $uploadedFilePath = $_FILES['backup_file']['tmp_name'];
-            $host = getenv('DB_HOST');
-            $db   = getenv('DB_NAME');
-            $user = getenv('DB_USER');
-            $pass = getenv('DB_PASS');
-            $port = getenv('DB_PORT') ?: 5432;
-
-            putenv("PGPASSWORD=$pass");
-            $command = "psql -h $host -p $port -U $user -d $db -f $uploadedFilePath -q 2>&1";
-            
-            $output = [];
-            $return_var = 0;
-            exec($command, $output, $return_var);
-            
-            if ($return_var === 0) {
-                $message = "🎉 Khôi phục dữ liệu siêu tốc thành công!";
-            } else {
-                $errorMsg = implode(" | ", array_slice($output, 0, 5));
-                $message = "❌ Lỗi khôi phục: " . htmlspecialchars($errorMsg);
+            try {
+                $sql_content = file_get_contents($_FILES['backup_file']['tmp_name']);
+                $pdo->exec($sql_content); // Chạy trực tiếp file SQL
+                $message = "🎉 Khôi phục dữ liệu thành công!";
+            } catch (Exception $e) {
+                $message = "❌ Lỗi khôi phục: " . $e->getMessage();
             }
-        } else {
-            $message = "⚠️ Chỉ chấp nhận file có đuôi .sql!";
-        }
-    } else {
-        $message = "⚠️ Lỗi tải file: " . $_FILES['backup_file']['error'];
+        } else { $message = "⚠️ Chỉ chấp nhận file .sql!"; }
     }
 }
 
 // --- XỬ LÝ TẢI BACKUP THỦ CÔNG ---
 if (isset($_GET['download_backup']) && isset($_SESSION['loggedin'])) {
-    $host = getenv('DB_HOST');
-    $db   = getenv('DB_NAME');
-    $user = getenv('DB_USER');
-    $pass = getenv('DB_PASS');
-    $port = getenv('DB_PORT') ?: 5432;
-
     $date = date("Y-m-d_H-i");
-    $filename = "tintuc_manual_$date.sql";
-
+    $filename = "tintuc_backup_$date.sql";
     header('Content-Type: application/sql');
     header('Content-Disposition: attachment; filename="' . $filename . '"');
-    putenv("PGPASSWORD=$pass");
-    $command = "pg_dump -h $host -p $port -U $user --column-inserts $db";
-    passthru($command);
+    
+    echo "-- Backup Database tintuc.pmtl.site\n";
+    echo "-- Date: $date\n\n";
+    
+    $stmt = $pdo->query("SELECT * FROM posts ORDER BY id ASC");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $title = $pdo->quote($row['title']);
+        $content = $pdo->quote($row['content']);
+        $created_at = $pdo->quote($row['created_at']);
+        echo "INSERT INTO posts (title, content, created_at) VALUES ($title, $content, $created_at);\n";
+    }
     exit;
 }
 
