@@ -37,10 +37,8 @@ try {
         
         echo "  <url>\n";
         
-        // NẾU BẠN DÙNG URL REWRITE (.html) chuẩn SEO thì bật dòng dưới lên và xóa dòng post.php?id= đi:
-        // echo "      <loc>" . $base_url . "/post-" . $row['id'] . ".html</loc>\n";
+        echo "      <loc>" . $base_url . "/post-" . $row['id'] . ".html</loc>\n";
         
-        echo "      <loc>" . $base_url . "/post.php?id=" . $row['id'] . "</loc>\n";
         
         echo "      <lastmod>" . $date . "</lastmod>\n";
         echo "      <changefreq>monthly</changefreq>\n";
