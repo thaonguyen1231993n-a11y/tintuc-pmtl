@@ -84,13 +84,33 @@ try {
                 </span>
             </div>
             
+            <?php 
+                $raw_content = $post['content'];
+                $featured_media = "";
+                $final_content = $raw_content;
+
+                // TÁCH MEDIA (VIDEO HOẶC ẢNH) ĐỂ CHO VÀO KHUNG CHUẨN
+                if (preg_match('/(<iframe.*?>.*?<\/iframe>)/is', $raw_content, $matches)) {
+                    $featured_media = $matches[1];
+                    $final_content = str_replace($featured_media, "", $raw_content);
+                } elseif (preg_match('/(<img[^>]+>)/i', $raw_content, $matches)) {
+                    $featured_media = $matches[1];
+                    $final_content = str_replace($featured_media, "", $raw_content);
+                }
+
+                // Tự động chuyển link text thành link click được
+                $final_content = preg_replace('/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', $final_content);
+                
+                // 1. In khung Media (Nếu có video hoặc ảnh)
+                if (!empty($featured_media)) {
+                    echo '<div class="media-box" style="margin-bottom: 20px;">';
+                    echo $featured_media; 
+                    echo '</div>';
+                }
+            ?>
+            
             <div class="content-wrapper">
-                <?php 
-                    $content = $post['content'];
-                    // Tự động chuyển đổi các link dạng text thành link click được (giống index.php)
-                    $content = preg_replace('/(?<!src="|href="|">)(https?:\/\/[^\s<]+)/', '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>', $content);
-                    echo $content; 
-                ?>
+                <?php echo $final_content; ?>
             </div>
             
             <div style="margin-top: 50px; text-align: center; border-top: 1px solid #eee; padding-top: 30px;">
@@ -104,5 +124,19 @@ try {
         <footer></footer>
         
     </div>
+    <script>
+        window.addEventListener('load', function() {
+            var iframes = document.querySelectorAll('.media-box iframe, .content-wrapper iframe');
+            iframes.forEach(function(iframe) {
+                var w = iframe.getAttribute('width');
+                var h = iframe.getAttribute('height');
+                if (w && h) {
+                    iframe.style.aspectRatio = w + " / " + h;
+                } else {
+                    iframe.style.aspectRatio = "16 / 9";
+                }
+            });
+        });
+    </script>
 </body>
 </html>
