@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap');
+
 /* --- CẤU HÌNH CHUNG --- */
 html, body {
     font-family: 'Noto Serif', 'Times New Roman', serif;
@@ -79,7 +81,6 @@ body {
 /* =========================================
    MEDIA BOX (KHUNG VÀNG & VIDEO)
    ========================================= */
-
 .media-box {
     width: 100%; 
     box-sizing: border-box;
@@ -97,30 +98,30 @@ body {
 .media-box img {
     display: block;
     width: auto; height: auto;
-    max-width: 100%; max-height: 560px; /* Giới hạn chiều cao ảnh */
+    max-width: 100%; max-height: 560px;
     object-fit: contain; border-radius: 4px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* VIDEO IFRAME - QUAN TRỌNG */
+/* VIDEO IFRAME */
 .media-box iframe {
     display: block;
-    max-width: 100%; /* Luôn vừa khung ngang */
-    
-    /* BỎ chiều cao cố định và aspect-ratio cứng */
-    /* Chiều cao sẽ được JS tính toán tự động theo tỷ lệ */
+    max-width: 100%; 
     height: auto; 
-    
     border: none;
     border-radius: 4px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-/* --- TỐI ƯU HIỂN THỊ VĂN BẢN BÁO CHÍ --- */
+/* =========================================
+   TỐI ƯU HIỂN THỊ NỘI DUNG VĂN BẢN (ĐỒNG BỘ)
+   ========================================= */
 .content-wrapper {
     margin-top: 15px; 
-    font-size: 16px; 
-    color: #333333; /* Màu chữ tối hơn một chút để dễ đọc */
+    font-family: 'Noto Serif', serif;
+    font-size: 18px; /* TĂNG SIZE CHỮ LÊN 18px CHO DỄ ĐỌC */
+    line-height: 1.6; 
+    color: #333333; 
     text-align: justify; 
     word-wrap: break-word; 
     position: relative; 
@@ -129,18 +130,31 @@ body {
 }
 
 .content-wrapper p {
-    margin-top: 0;
-    margin-bottom: 8px; /* Thu hẹp khoảng cách giữa các đoạn */
-    line-height: 1.5;   /* Khoảng cách giữa các dòng trong cùng 1 đoạn gọn gàng hơn */
+    margin-top: 0 !important;
+    margin-bottom: 14px !important;
+    line-height: 1.6 !important;
 }
 
-/* Triệt tiêu các khoảng trống khổng lồ do ấn Enter 2 lần trong lúc soạn thảo */
-.content-wrapper p:has(br:only-child) {
-    margin-bottom: 0;
-    height: 5px; 
+/* Triệt tiêu các khoảng trống khổng lồ nhưng vẫn giữ 1 khoảng nhỏ khi Enter 2 lần */
+.content-wrapper p:has(> br:only-child),
+.content-wrapper p:empty {
+    display: block !important;
+    height: 14px !important; 
+    margin-bottom: 0 !important; 
 }
 
-/* Tối ưu các thẻ tiêu đề (nếu bạn có bôi đen chọn Heading trong lúc viết) */
+/* Tối ưu danh sách gạch đầu dòng */
+.content-wrapper ul, .content-wrapper ol {
+    margin-top: 0 !important;
+    margin-bottom: 14px !important;
+    padding-left: 20px !important;
+}
+.content-wrapper li {
+    margin-bottom: 8px !important;
+    line-height: 1.6 !important;
+}
+
+/* Tối ưu các thẻ tiêu đề (Heading) */
 .content-wrapper h1, .content-wrapper h2, .content-wrapper h3 {
     margin-top: 16px;
     margin-bottom: 8px;
@@ -149,10 +163,10 @@ body {
     line-height: 1.3;
 }
 
-/* --- TEXT CONTENT --- */
-.content-wrapper {
-    margin-top: 15px; font-size: 16px; line-height: 1.6; color: #3E2723; text-align: justify; word-wrap: break-word; position: relative; transition: max-height 0.5s ease; overflow: hidden;
-}
+.content-wrapper img { max-width: 100% !important; margin: 10px auto !important; display: block; }
+.content-wrapper a { color: #b35400; text-decoration: none; border-bottom: 1px dotted #b35400; font-weight: bold; word-break: break-all; }
+
+/* Thu gọn bài viết dài */
 .content-collapsed { max-height: 280px; }
 .content-collapsed::after { content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1)); pointer-events: none; }
 .btn-readmore { display: block; margin: 15px auto 0; background-color: transparent; color: #8B4513; border: 1px solid #8B4513; padding: 8px 25px; border-radius: 20px; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: bold; transition: 0.3s; }
@@ -163,7 +177,6 @@ body {
 .pagination a, .pagination span { padding: 8px 14px; border: 1px solid #E6D5B8; text-decoration: none; color: #8B4513; border-radius: 4px; background: #fff; font-weight: bold; font-size: 14px; transition: 0.2s; }
 .pagination a:hover { background: #FFF8E1; border-color: #D9A404; }
 .pagination .active { background: #8B4513; color: #fff; border-color: #8B4513; }
-.content-wrapper img { max-width: 100% !important; margin: 10px auto !important; display: block; }
-.content-wrapper a { color: #b35400; text-decoration: none; border-bottom: 1px dotted #b35400; font-weight: bold; word-break: break-all; }
+
 footer { text-align: center; padding: 20px; background-color: #FFFBBE; border-top: 1px solid #E6D5B8; margin-top: 20px; }
 footer a { color: #8B4513; text-decoration: none; font-size: 13px; }
