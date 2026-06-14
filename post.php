@@ -23,6 +23,14 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($post['title']); ?></title>
     <link rel="stylesheet" href="style.css"> 
+    
+    <link rel="canonical" href="https://tintuc.pmtl.site/post.php?id=<?php echo $post['id']; ?>" />
+    
+    <?php 
+        $plain_text = strip_tags($post['content']);
+        $meta_desc = mb_substr($plain_text, 0, 150, "UTF-8") . "...";
+    ?>
+    <meta name="description" content="<?php echo htmlspecialchars($meta_desc); ?>">
 </head>
 <body>
     <div class="container" style="padding: 20px;">
