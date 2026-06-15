@@ -27,7 +27,7 @@ try {
         $title = htmlspecialchars(strip_tags($row['title']));
         
         // Tạo mô tả ngắn (250 ký tự) cho Email
-        $plain_text = strip_tags($row['content']);
+        $plain_text = strip_tags(str_replace(['<br>', '<br/>', '</p>'], ' ', $row['content']));
         $description = htmlspecialchars(mb_substr($plain_text, 0, 250, "UTF-8") . "...");
         
         // Trích xuất ảnh bìa để chèn vào Email
