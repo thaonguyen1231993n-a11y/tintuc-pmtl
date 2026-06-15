@@ -61,6 +61,17 @@ if (isset($_GET['id'])) {
 
       gtag('config', 'G-8XXJ311L68');
     </script>
+    <script async type="application/javascript" src="https://news.google.com/swg/js/v1/swg-basic.js"></script>
+    <script>
+      (self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
+        basicSubscriptions.init({
+          type: "NewsArticle",
+          isPartOfType: ["Product"],
+          isPartOfProductId: "CAowwPvGDA:openaccess",
+          clientOptions: { theme: "light", lang: "vi" },
+        });
+      });
+    </script>
 </head>
 <body>
 
