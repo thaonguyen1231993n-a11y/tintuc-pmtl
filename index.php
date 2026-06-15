@@ -53,6 +53,14 @@ if (isset($_GET['id'])) {
     <link rel="icon" href="logo.png" type="image/png">
     <link rel="stylesheet" href="style.css?v=1.1">
     <link rel="canonical" href="https://tintuc.pmtl.site/" />
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8XXJ311L68"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-8XXJ311L68');
+    </script>
 </head>
 <body>
 
