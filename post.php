@@ -51,6 +51,18 @@ try {
     <link rel="icon" href="logo.png" type="image/png">
     
     <link rel="canonical" href="https://tintuc.pmtl.site/post-<?php echo $post['id']; ?>.html" />
+    <script async type="application/javascript"
+            src="https://news.google.com/swg/js/v1/swg-basic.js"></script>
+    <script>
+      (self.SWG_BASIC = self.SWG_BASIC || []).push( basicSubscriptions => {
+        basicSubscriptions.init({
+          type: "NewsArticle",
+          isPartOfType: ["Product"],
+          isPartOfProductId: "CAowwPvGDA:openaccess",
+          clientOptions: { theme: "light", lang: "vi" },
+        });
+      });
+    </script>
 </head>
 <body>
     <div class="container">
