@@ -63,6 +63,36 @@ try {
         });
       });
     </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "NewsArticle",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://tintuc.pmtl.site/post-<?php echo $post['id']; ?>.html"
+      },
+      "headline": "<?php echo htmlspecialchars($post['title']); ?>",
+      "image": [
+        "<?php echo htmlspecialchars($og_image); ?>"
+      ],
+      "datePublished": "<?php echo date('c', strtotime($post['created_at'])); ?>",
+      "dateModified": "<?php echo date('c', strtotime($post['created_at'])); ?>",
+      "author": {
+        "@type": "Organization",
+        "name": "Pháp Môn Tâm Linh",
+        "url": "https://tintuc.pmtl.site/"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Pháp Môn Tâm Linh",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://tintuc.pmtl.site/logo.png"
+        }
+      },
+      "description": "<?php echo htmlspecialchars($meta_desc); ?>"
+    }
+    </script>    
 </head>
 <body>
     <div class="container">
